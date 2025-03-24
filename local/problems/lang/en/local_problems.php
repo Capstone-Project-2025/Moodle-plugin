@@ -1,4 +1,4 @@
 <?php
 
 $string['userstatistics'] = 'User Statistics';
-$string['mycustombutton'] = 'Problems';
+$string['contestButton'] = 'Contests';

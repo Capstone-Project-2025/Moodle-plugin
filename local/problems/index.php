@@ -1,18 +1,13 @@
 <?php
+
 require_once('../../config.php');
 
-$courseid = required_param('courseid', PARAM_INT);
-
-$course = $DB->get_record('course', ['id' => $courseid], 'fullname');
-
-if (!$course) {
-    print_error('Invalid course ID');
-}
+$contestname = "Sample Contest";
 
 $PAGE->set_url(new moodle_url('/local/problems/index.php'));
 $PAGE->set_context(context_system::instance());
-$PAGE->set_title('Problem Management');
-$PAGE->set_heading("Moodle Interface for Problem Management - " . format_string($course->fullname));
+$PAGE->set_title("Contest - " . format_string($contestname));
+$PAGE->set_heading("Moodle Interface for " . format_string($contestname));
 
 
 echo $OUTPUT->header();

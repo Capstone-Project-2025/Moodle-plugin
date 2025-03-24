@@ -7,11 +7,11 @@ function local_problems_extend_navigation_course($navigation, $course, $context)
 
     if ($PAGE->url->compare(new moodle_url('/course/view.php'), URL_MATCH_BASE)) {
         $node = $navigation->add(
-            get_string('mycustombutton', 'local_problems'),
-            new moodle_url('/local/problems/index.php', ['courseid' => $course->id]), // Ajout de l'ID du cours
+            get_string('contestButton', 'local_problems'),
+            new moodle_url('/local/problems/contest.php', ['courseid' => $course->id]),
             navigation_node::TYPE_CUSTOM,
             null,
-            'mycustombutton'
+            'contestButton'
         );
         $node->showinflatnavigation = true;
     }
