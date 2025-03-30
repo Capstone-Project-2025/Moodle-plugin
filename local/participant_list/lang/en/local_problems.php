@@ -1,0 +1,3 @@
+<?php
+
+$string['mycustombutton'] = 'Problems';
