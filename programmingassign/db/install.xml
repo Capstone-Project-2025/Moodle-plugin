@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XMLDB PATH="mod/programmingassign/db" VERSION="2025040102" COMMENT="Programming Assignment Plugin">
+    <TABLES>
+        <TABLE NAME="programmingassign" COMMENT="Extended table for custom programming assignments">
+            <FIELDS>
+                <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+                <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true"/>
+                <FIELD NAME="description" TYPE="text" NOTNULL="false"/>
+                <FIELD NAME="descriptionformat" TYPE="int" LENGTH="10" NOTNULL="false"/>
+                <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true"/>
+                <FIELD NAME="testcases" TYPE="text" NOTNULL="false"/>
+                <FIELD NAME="language" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="python"/>
+                <FIELD NAME="allowsubmissionsfromdate" TYPE="int" LENGTH="10" NOTNULL="false"/>
+                <FIELD NAME="duedate" TYPE="int" LENGTH="10" NOTNULL="false"/>
+                <FIELD NAME="cutoffdate" TYPE="int" LENGTH="10" NOTNULL="false"/>
+                <FIELD NAME="gradingduedate" TYPE="int" LENGTH="10" NOTNULL="false"/>
+            </FIELDS>
+            <KEYS>
+                <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+                <KEY NAME="coursefk" TYPE="foreign" FIELDS="course" REFTABLE="course" REFFIELDS="id"/>
+            </KEYS>
+        </TABLE>
+    </TABLES>
+</XMLDB>
