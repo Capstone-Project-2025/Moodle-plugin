@@ -143,4 +143,64 @@ echo $courserenderer->frontpage();
 if ($editing && has_capability('moodle/course:create', context_system::instance())) {
     echo $courserenderer->add_new_course_button();
 }
-echo $OUTPUT->footer();
+function getAccessToken(){
+    global $USER;
+    if (!isset($USER) || !isset($USER->id)) {
+        echo "USER not set properly.";
+        return;
+    }
+
+    $url = 'http://10.0.10.83:4000/api/token/';
+    $data = json_encode([
+        'uid' => $USER->id,
+        'api_secret' => 'secret',
+        'provider' => 'moodle'
+    ]);
+    // Initialize a cURL session
+    $ch = curl_init($url);
+
+    // Return the transfer as a string of the return value of curl_exec() instead of outputting it directly.
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    // Sets the body of the POST request
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+
+    // Set HTTP header fields, indicate that the body is JSON.
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json'
+    ]);
+
+    // FALSE: do not fail verbosely if the HTTP code returned is greater than or equal to 400.
+    curl_setopt($ch, CURLOPT_FAILONERROR, false);
+
+    // Execute the request
+    $response = curl_exec($ch);
+    
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    echo "HTTP Status Code: ". $httpCode . "<br>";
+
+    if ($error) {
+        echo "cURL Error: $error\n";
+    } else {
+        echo "Response Body:" . "<br>";
+        $responseData = json_decode($response, true);
+        echo '<pre>';
+        echo json_encode($responseData, JSON_PRETTY_PRINT);
+        echo '</pre>';
+    }
+}
+$sth = getAccessToken();
+echo $sth;
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+    <button onclick="window.location.href ='http://10.0.10.83:4000/login/moodle/?next=http://10.0.10.232/OurMoodleSite'">Button</a>
+</body>
+</html>
