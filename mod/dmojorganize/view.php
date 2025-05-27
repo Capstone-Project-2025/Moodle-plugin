@@ -45,6 +45,7 @@ $stmt->close();
 $conn->close();
 
 // After the OK button in the HTML form below is clicked
+/*
 if ($_SERVER["REQUEST_METHOD"] == "POST"){
     $option_selected = $_POST["dmoj_options"];
 
@@ -66,13 +67,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
         $conn->close();
     }
 }
+*/
 ?>
 
 <!DOCTYPE html>
 <html>
     <body>
     <?php if (!$found): ?>
-        <form action="view.php?id=<?php echo $courseid; ?>" method="POST">
+        <form action="formresponse.php?id=<?php echo $courseid; ?>" method="POST">
             <label for="dmoj_links">Link to DMOJ organization</label>
             <select name="dmoj_options" id="dmoj_options">
                 <option value="yes">Yes</option>
