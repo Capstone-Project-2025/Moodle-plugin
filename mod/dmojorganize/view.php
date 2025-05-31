@@ -47,30 +47,6 @@ if ($row = $result->fetch_assoc()) {
 $stmt->close();
 $conn->close();
 
-// After the OK button in the HTML form below is clicked
-/*
-if ($_SERVER["REQUEST_METHOD"] == "POST"){
-    $option_selected = $_POST["dmoj_options"];
-
-    if ($option_selected == "yes"){
-        // Create connection
-        $conn = new mysqli($servername, $username, $password, $dbname);
-
-        // Check connection
-        if ($conn->connect_error) {
-            die("Connection failed: " . $conn->connect_error);
-        }
-
-        $stmt = $conn->prepare("INSERT INTO mdl_dmoj_organize (course_id, organization_id) VALUES (?, ?)");
-        // Placeholder DMOJ organization ID, in the finished code this should be taken from a DMOJ website API request
-        $organization_id_testing = 555; 
-        $stmt->bind_param("ii", $courseid, $organization_id_testing);
-        $stmt->execute();
-        $stmt->close();
-        $conn->close();
-    }
-}
-*/
 // GET list of organizations from DMOJ
 $url = "http://139.59.105.152/api/v2/organizations";
 
@@ -89,7 +65,66 @@ if (isset($data)){
 } else {
     echo "Error: " . $data['error'];
 }
-
+/*
+Example output:
+{
+    "api_version": "2.0",
+    "method": "get",
+    "fetched": "2025-05-31T13:44:52.589440+00:00",
+    "data": {
+        "current_object_count": 6,
+        "objects_per_page": 1000,
+        "page_index": 1,
+        "has_more": false,
+        "objects": [
+            {
+                "id": 1,
+                "slug": "dmoj",
+                "short_name": "DMOJ",
+                "is_open": true,
+                "member_count": 4
+            },
+            {
+                "id": 2,
+                "slug": "private-org",
+                "short_name": "Private org",
+                "is_open": false,
+                "member_count": 1
+            },
+            {
+                "id": 3,
+                "slug": "teacherk",
+                "short_name": "Private orgk",
+                "is_open": true,
+                "member_count": 0
+            },
+            {
+                "id": 8,
+                "slug": "sample",
+                "short_name": "SAM",
+                "is_open": true,
+                "member_count": 0
+            },
+            {
+                "id": 9,
+                "slug": "sample",
+                "short_name": "SAM",
+                "is_open": true,
+                "member_count": 0
+            },
+            {
+                "id": 11,
+                "slug": "sample",
+                "short_name": "SAM",
+                "is_open": true,
+                "member_count": 0
+            }
+        ],
+        "total_objects": 6,
+        "total_pages": 1
+    }
+}
+*/
 ?>
 <!DOCTYPE html>
 <html>
