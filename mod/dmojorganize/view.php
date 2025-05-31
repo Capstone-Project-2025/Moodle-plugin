@@ -1,4 +1,7 @@
 <?php
+
+use core_customfield\data;
+
 require_once('../../config.php');
 
 $courseid = required_param('id', PARAM_INT); // 'id' must be passed in the URL
@@ -68,8 +71,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
     }
 }
 */
-?>
+// GET list of organizations from DMOJ
+$url = "http://139.59.105.152/api/v2/organizations";
 
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$response = curl_exec($ch);
+curl_close($ch);
+$data = json_decode($response, true);
+
+if (isset($data)){
+    echo "List of our DMOJ organizations collected by GET request:" . "<br>";
+    echo '<pre>';
+    echo json_encode($data, JSON_PRETTY_PRINT);
+    echo '</pre>';
+} else {
+    echo "Error: " . $data['error'];
+}
+
+?>
 <!DOCTYPE html>
 <html>
     <body>
@@ -93,7 +114,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST"){
         <br>
         <label>DMOJ organization ID linked: <?php echo htmlspecialchars($dmoj_organization_id_found); ?></label>
     <?php endif; ?>
-  <br>
+    <br>
   </body>
 </html>
 <?php
