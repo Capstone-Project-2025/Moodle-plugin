@@ -74,6 +74,57 @@ if (isset($data)){
 } else {
     echo "Error: " . $data['error'];
 }
+
+// Configuration
+$apiurl = 'http://139.59.105.152';
+$username = 'admin';
+$password = 'admin';
+
+function get_token($apiurl, $username, $password) {
+    $curl = curl_init("$apiurl/api/token/");
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl, CURLOPT_POST, true);
+    curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode([
+        'username' => $username,
+        'password' => $password
+    ]));
+    $response = curl_exec($curl);
+    curl_close($curl);
+    $data = json_decode($response, true);
+    return $data['access'] ?? null;
+}
+
+function create_organization($apiurl, $token){
+    $data = [
+        "name" => "Sample Course",
+        "slug" => "sample",
+        "short_name" => "SAM",
+        "about" => "A sample org for testing.",
+        "access_code" => "ABC1234"
+    ];
+    $jsonData = json_encode($data);
+
+    $curl = curl_init("$apiurl/api/v2/organizations");
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true); // Return response as string
+    curl_setopt($curl, CURLOPT_POST, true);           // Use POST method
+    curl_setopt($curl, CURLOPT_POSTFIELDS, $jsonData); // Attach the JSON data
+    curl_setopt($curl, CURLOPT_HTTPHEADER, [
+        "Content-Type: application/json",
+        "Authorization: Bearer $token"
+    ]);
+    curl_exec($curl);
+    if (curl_errno($curl)) {
+        echo "cURL Error: " . curl_error($curl);
+        curl_close($curl);
+        exit;
+    }
+    curl_close($curl);
+}
+
+$token = get_token($apiurl, $username, $password);
+create_organization($apiurl, $token);
+
 /*
 Example output:
 {
