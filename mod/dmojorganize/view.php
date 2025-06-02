@@ -62,6 +62,15 @@ if (isset($data)){
     echo '<pre>';
     echo json_encode($data, JSON_PRETTY_PRINT);
     echo '</pre>';
+
+    $objects = $data['data']['objects'];
+    $maxId = 0;
+    foreach ($objects as $obj) {
+        if ($obj['id'] > $maxId) {
+            $maxId = $obj['id'];
+        }
+    }
+    echo "<br>" . "ID just created: " . $maxId . "<br>";
 } else {
     echo "Error: " . $data['error'];
 }
