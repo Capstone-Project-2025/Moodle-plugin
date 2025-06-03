@@ -62,10 +62,11 @@ function get_token($apiurl, $username, $password) {
 
 function create_organization($apiurl, $token, $courseid){
     // API request to create a new organization
+    $course = get_course($courseid);
     $data = [
-        "name" => get_course($courseid)->fullname,
-        "slug" => "sample",
-        "short_name" => "SAM",
+        "name" => $course->fullname,
+        "slug" => $course->shortname,
+        "short_name" => $course->shortname,
         "about" => "A sample org for testing.",
         "is_open" => false,
         "access_code" => "ABC1234"
