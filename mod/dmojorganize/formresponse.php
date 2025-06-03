@@ -67,6 +67,7 @@ function create_organization($apiurl, $token, $courseid){
         "slug" => "sample",
         "short_name" => "SAM",
         "about" => "A sample org for testing.",
+        "is_open" => false,
         "access_code" => "ABC1234"
     ];
     $jsonData = json_encode($data);
