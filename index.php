@@ -22,6 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use function DI\get;
+
 if (!file_exists('./config.php')) {
     header('Location: install.php');
     die;
@@ -30,6 +32,7 @@ if (!file_exists('./config.php')) {
 require_once('config.php');
 require_once($CFG->dirroot .'/course/lib.php');
 require_once($CFG->libdir .'/filelib.php');
+require_once('apirequest.php');
 
 redirect_if_major_upgrade_required();
 
@@ -143,6 +146,7 @@ echo $courserenderer->frontpage();
 if ($editing && has_capability('moodle/course:create', context_system::instance())) {
     echo $courserenderer->add_new_course_button();
 }
+/*
 function getAccessToken(){
     global $USER;
     if (!isset($USER) || !isset($USER->id)) {
@@ -192,15 +196,62 @@ function getAccessToken(){
         echo '</pre>';
     }
 }
+*/
+/*
 $sth = getAccessToken();
 echo $sth;
+*/
+// Testing the "Request" class
+/*
+$url = "http://139.59.105.152/api/v2/organizations";
+$curl = curl_init();
+curl_setopt($curl, CURLOPT_URL, $url);
+curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+$response = curl_exec($curl);
+$statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+$error = curl_error($curl);
+$errorCode = curl_errno($curl);
+curl_close($curl);
+if ($errorCode) {
+    $output = [
+        'success' => false,
+        'error' => $error,
+        'code' => $errorCode
+    ];
+} else {
+    $output = [
+        'success' => true,
+        'status_code' => $statusCode,
+        'response' => json_decode($response, true)
+    ];
+}
+if ($output["success"]){
+    echo "Status code: " . $output["status_code"] . "<br>";
+    echo '<pre>';
+    echo json_encode($output["response"], JSON_PRETTY_PRINT);
+    echo '</pre>';
+}
+*/
+/*
+require_login();
+global $USER;
+$user_array = (array) $USER;
+$json_output = json_encode($user_array, JSON_PRETTY_PRINT);
+echo '<pre>' . $json_output . '</pre>';
+*/
+
+$url = "http://139.59.105.152/";
+$method = "POST";
+$base_request = new APIRequest($url, $method);
+$API_response = $base_request->GetAccessToken()["response"]; // This does both things: get access token as stored variable, and also set the access token in the storage
+$json_response = json_encode($API_response, JSON_PRETTY_PRINT);
+echo "Token Pair: <br>";
+echo '<pre>' . $json_response . '</pre>';
+
+$accessible_problems_response = $base_request->get_all_accessible_problems();
+$json_response = json_encode($accessible_problems_response, JSON_PRETTY_PRINT);
+echo "All accessible problems: <br>";
+echo '<pre>' . $json_response . '</pre>';
+
+echo $OUTPUT->footer();
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Login</title>
-</head>
-<body>
-    <button onclick="window.location.href ='http://10.0.10.83:4000/login/moodle/?next=http://10.0.10.232/OurMoodleSite'">Button</a>
-</body>
-</html>
