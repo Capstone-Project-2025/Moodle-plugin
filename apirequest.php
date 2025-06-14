@@ -1,5 +1,6 @@
 <?php
-$DOMAIN = "http://139.59.105.152";
+//$DOMAIN = "http://139.59.105.152";
+define('DOMAIN', 'http://139.59.105.152');
 define('TOKEN_OBTAIN_SECRET', "secret");
 
 class APIRequest {
@@ -21,9 +22,9 @@ class APIRequest {
         $this->payload = $payload;
     }
 
-    public static function init($domain) {
-        self::$ACCESS_TOKEN_URL = "{$domain}/api/token/";
-        self::$REFRESH_TOKEN_URL = "{$domain}/api/token/refresh/";
+    public static function init() {
+        self::$ACCESS_TOKEN_URL = DOMAIN . "/api/token/";
+        self::$REFRESH_TOKEN_URL = DOMAIN . "/api/token/refresh/";
     }
 
     public function send() {
@@ -71,8 +72,6 @@ class APIRequest {
         ];
     }
     public function GetAccessToken() {
-        $url = self::$ACCESS_TOKEN_URL;
-
         require_login();
         global $USER;
         //echo "User ID: " . $USER->id . "<br>";
@@ -82,7 +81,7 @@ class APIRequest {
             "uid" => $USER->id
         ];
 
-        $ch = curl_init($url);
+        $ch = curl_init(self::$ACCESS_TOKEN_URL);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
@@ -143,6 +142,7 @@ class APIRequest {
         unset(self::$storage['refresh_token']);
     }
     public function run() {
+        $this->GetAccessToken();
         $response = $this->send();
         if ($response["status"] == 401){
             try {
@@ -167,9 +167,32 @@ class APIRequest {
         return $response;
     }
 }
+/*
 class GetProblemList extends APIRequest {
     public function __construct($params = null) {
         global $DOMAIN;
+        $base_url = $DOMAIN . "/api/v2/problems";
+        $method = "GET";
+        $headers = [
+            "Content-Type" => "application/json",
+            "Accept" => "application/json"
+        ];
+        parent::__construct($base_url, $method, $headers, $params);
+    }
+}
+*/
+class GetProblemList extends APIRequest {
+    public function __construct($params = []) {
+        $method = "GET";
+        $url = DOMAIN . "/api/v2/problems";
+        parent::__construct($url, $method, [], $params, []);
+    }
+}
+class GetProblemDetails extends APIRequest {
+    public function __construct($problem_code) {
+        $method = "GET";
+        $url = DOMAIN . "/api/v2/problem/" . $problem_code;
+        parent::__construct($url, $method, [], [], []);
     }
 }
 ?>

@@ -201,57 +201,17 @@ function getAccessToken(){
 $sth = getAccessToken();
 echo $sth;
 */
-// Testing the "Request" class
-/*
-$url = "http://139.59.105.152/api/v2/organizations";
-$curl = curl_init();
-curl_setopt($curl, CURLOPT_URL, $url);
-curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-$response = curl_exec($curl);
-$statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-$error = curl_error($curl);
-$errorCode = curl_errno($curl);
-curl_close($curl);
-if ($errorCode) {
-    $output = [
-        'success' => false,
-        'error' => $error,
-        'code' => $errorCode
-    ];
-} else {
-    $output = [
-        'success' => true,
-        'status_code' => $statusCode,
-        'response' => json_decode($response, true)
-    ];
-}
-if ($output["success"]){
-    echo "Status code: " . $output["status_code"] . "<br>";
-    echo '<pre>';
-    echo json_encode($output["response"], JSON_PRETTY_PRINT);
-    echo '</pre>';
-}
-*/
-/*
-require_login();
-global $USER;
-$user_array = (array) $USER;
-$json_output = json_encode($user_array, JSON_PRETTY_PRINT);
-echo '<pre>' . $json_output . '</pre>';
-*/
+APIRequest::init(); // Initialize ACCESS_TOKEN_URL
 
-$url = "http://139.59.105.152/";
-$method = "POST";
-$base_request = new APIRequest($url, $method);
-$API_response = $base_request->GetAccessToken()["response"]; // This does both things: get access token as stored variable, and also set the access token in the storage
-$json_response = json_encode($API_response, JSON_PRETTY_PRINT);
-echo "Token Pair: <br>";
-echo '<pre>' . $json_response . '</pre>';
+$problem_request = new GetProblemList();
+$response = $problem_request->run();
+$response['body'] = json_decode($response['body'], true);
+echo "<pre>" . json_encode($response, JSON_PRETTY_PRINT) . "</pre>";
 
-$result = new GetProblemList();
-$response = $result->run();
-$json_output = json_encode($response, JSON_PRETTY_PRINT);
-echo '<pre>' . $json_output . '</pre>';
+$problem_details = new GetProblemDetails("newproblem");
+$response = $problem_details->run();
+$response['body'] = json_decode($response['body'], true);
+echo "<pre>" . json_encode($response, JSON_PRETTY_PRINT) . "</pre>";
 
 echo $OUTPUT->footer();
 ?>
