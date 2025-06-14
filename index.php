@@ -248,10 +248,10 @@ $json_response = json_encode($API_response, JSON_PRETTY_PRINT);
 echo "Token Pair: <br>";
 echo '<pre>' . $json_response . '</pre>';
 
-$accessible_problems_response = $base_request->get_all_accessible_problems();
-$json_response = json_encode($accessible_problems_response, JSON_PRETTY_PRINT);
-echo "All accessible problems: <br>";
-echo '<pre>' . $json_response . '</pre>';
+$result = new GetProblemList();
+$response = $result->run();
+$json_output = json_encode($response, JSON_PRETTY_PRINT);
+echo '<pre>' . $json_output . '</pre>';
 
 echo $OUTPUT->footer();
 ?>
