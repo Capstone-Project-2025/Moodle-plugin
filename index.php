@@ -140,7 +140,6 @@ echo $courserenderer->frontpage();
 if ($editing && has_capability('moodle/course:create', context_system::instance())) {
     echo $courserenderer->add_new_course_button();
 }
-APIRequest::init(); // Initialize ACCESS_TOKEN_URL
 
 $problem_request = new GetProblemList();
 $response = $problem_request->run();

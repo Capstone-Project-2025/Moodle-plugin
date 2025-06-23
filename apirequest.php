@@ -4,8 +4,6 @@ define('DOMAIN', 'http://139.59.105.152');
 define('TOKEN_OBTAIN_SECRET', "secret");
 
 class APIRequest {
-    public static $ACCESS_TOKEN_URL;
-    public static $REFRESH_TOKEN_URL;
     public static $storage = [];
 
     public $url;
@@ -13,6 +11,8 @@ class APIRequest {
     public $headers;
     public $params;
     public $payload;
+    public $ACCESS_TOKEN_URL;
+    public $REFRESH_TOKEN_URL;
 
     public function __construct($url, $method, array $headers = [], array $params = [], array $payload = []) {
         $this->url = $url;
@@ -20,11 +20,8 @@ class APIRequest {
         $this->headers = $headers;
         $this->params = $params;
         $this->payload = $payload;
-    }
-
-    public static function init() {
-        self::$ACCESS_TOKEN_URL = DOMAIN . "/api/token/";
-        self::$REFRESH_TOKEN_URL = DOMAIN . "/api/token/refresh/";
+        $this->ACCESS_TOKEN_URL = DOMAIN . "/api/token/";
+        $this->REFRESH_TOKEN_URL = DOMAIN . "/api/token/refresh/";
     }
 
     public function send() {
@@ -47,18 +44,17 @@ class APIRequest {
         }
 
         $ch = curl_init();
-
-        curl_setopt($ch, CURLOPT_URL, $this->url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $this->method);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $formattedHeaders);
-
         // For POST or PUT, add JSON payload
         if (in_array($this->method, ['POST', 'PUT'])) {
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($this->payload));
             $formattedHeaders[] = 'Content-Type: application/json';
         }
+        curl_setopt($ch, CURLOPT_URL, $this->url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $this->method);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $formattedHeaders);
 
+        //echo "<br> Headers sent: <pre>". json_encode($formattedHeaders, JSON_PRETTY_PRINT) . "</pre> <br>";
         $responseBody = curl_exec($ch);
         $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
@@ -80,8 +76,7 @@ class APIRequest {
             "provider" => "moodle",
             "uid" => $USER->id
         ];
-
-        $ch = curl_init(self::$ACCESS_TOKEN_URL);
+        $ch = curl_init($this->ACCESS_TOKEN_URL);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
@@ -95,15 +90,17 @@ class APIRequest {
         if ($error) {
             throw new Exception("cURL Error: $error");
         }
-
+        
+        //echo "Tokens: <br>";
         $responseData = json_decode($responseBody, true);
+        //echo "<pre>" . json_encode($responseData, JSON_PRETTY_PRINT) . "</pre>";
 
         if ($statusCode === 200 && isset($responseData['access'], $responseData['refresh'])) {
             self::$storage['access_token'] = $responseData['access'];
             self::$storage['refresh_token'] = $responseData['refresh'];
             return $responseData;
         } else {
-            throw new Exception("Failed to obtain access token: HTTP $statusCode");
+            throw new Exception("Failed to obtain access token: HTTP status code $statusCode");
         }
     }
     public function TryRefreshToken() {
@@ -193,6 +190,39 @@ class GetProblemDetails extends APIRequest {
         $method = "GET";
         $url = DOMAIN . "/api/v2/problem/" . $problem_code;
         parent::__construct($url, $method, [], [], []);
+    }
+}
+class FetchDMOJid extends APIRequest {
+    public function __construct($params = [], $moodle_ids = []) {
+        $method = "POST";
+        $url = DOMAIN . "/api/v2/moodle-to-dmoj/";
+        $payload = [
+            "provider" => "moodle",
+            "id" => $moodle_ids
+        ];
+        parent::__construct($url, $method, [], $params, $payload);
+    }
+}
+class GetOrgDetail extends APIRequest {
+    public function __construct($DMOJ_organization_id)
+    {
+        $method = "GET";
+        $url = DOMAIN . "/api/v2/organization/" . $DMOJ_organization_id;
+        parent::__construct($url, $method);
+    }
+}
+/**
+ *
+ * @param int $DMOJ_organization_id
+ * @param array $payload
+ * @return array
+ */
+class ChangeOrgInfo extends APIRequest {
+    public function __construct($DMOJ_organization_id, $payload)
+    {
+        $method = "PUT";
+        $url = DOMAIN . "/api/v2/organization/" . $DMOJ_organization_id;
+        parent::__construct($url, $method, [], [], $payload);
     }
 }
 ?>
