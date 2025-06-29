@@ -225,4 +225,19 @@ class ChangeOrgInfo extends APIRequest {
         parent::__construct($url, $method, [], [], $payload);
     }
 }
+/**
+ *
+ * @param array $payload Format: <p>
+ * {"2": {"username": "fullfake", "email": "fullfake@example.com", "password": "Secret123!", "first_name": "Faker", "last_name": "son"}}
+ * </p>
+ * @return array
+ */
+class ForceCreateDMOJUser extends APIRequest {
+    public function __construct($payload)
+    {
+        $method = "POST";
+        $url = DOMAIN . "/api/v2/users/create";
+        parent::__construct($url, $method, [], [], $payload);
+    }
+}
 ?>
