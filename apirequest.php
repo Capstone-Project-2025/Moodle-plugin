@@ -228,8 +228,7 @@ class ChangeOrgInfo extends APIRequest {
 /**
  *
  * @param array $payload Format: <p>
- * {"2": {"username": "fullfake", "email": "fullfake@example.com", "password": "Secret123!", "first_name": "Faker", "last_name": "son"}}
- * </p>
+ * username (the only field required), email, password, first_name, last_name</p>
  * @return array
  */
 class ForceCreateDMOJUser extends APIRequest {

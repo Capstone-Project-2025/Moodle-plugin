@@ -61,7 +61,11 @@ $moodle_ids = [];
 
 // Loop through users and print user ID and their roles
 foreach ($users as $user) {
-    echo "User ID: {$user->id} - {$user->firstname} {$user->lastname}<br>";
+    echo "User ID: {$user->id}<br>";
+    echo "Username: {$user->username}<br>";
+    echo "User email: {$user->email}<br>";
+    echo "User first name: {$user->firstname}<br>";
+    echo "User last name: {$user->lastname}<br>";
 
     // $user->id is string, but API request requires integers
     array_push($moodle_ids, (int) $user->id);

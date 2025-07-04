@@ -111,7 +111,7 @@ function find_dmoj_organization_id(int $moodle_course_id){
 /**
  * @return int[]
  */
-function get_moodle_course_participants(int $courseid) {
+function get_moodle_course_participants_ids(int $courseid) {
     $context = context_course::instance($courseid);
     $users = get_enrolled_users($context);
 
@@ -124,10 +124,46 @@ function get_moodle_course_participants(int $courseid) {
     }
     return $moodle_ids;
 }
+/**
+ * @return array Returns an associative array with the Moodle user IDs as keys, and each value is a subset of username, email, firstname, lastname.
+ */
+function get_moodle_course_participants_full_info(int $courseid) {
+    $context = context_course::instance($courseid);
+    $users = get_enrolled_users($context);
+    $result = [];
+    foreach ($users as $user) {
+        $result[$user->id] = [
+            "username" => $user->username,
+            "email" => $user->email,
+            "first_name" => $user->firstname,
+            "last_name" => $user->lastname
+        ];
+    }
+    return $result;
+}
 
 function create_organization($apiurl, $token, $courseid){
+    /*
+    Steps:
+    - Create a new organization with the "Create a new organization" POST request
+    - Insert a (course_id, organization_id) pair to local database table mdl_dmoj_organize
+    - Get Moodle user IDs of all participants of this course
+    - Call the "fetch dmoj uid with moodle uid" POST request to get the list of DMOJ user_ids and profile_ids of the Moodle users already linked to DMOJ
+
+    */
     // API request to create a new organization
     $course = get_course($courseid);
+
+    /**
+     * @var array{
+     *     name: string,
+     *     slug: string,
+     *     short_name: string,
+     *     about: string,
+     *     is_open: bool,
+     *     access_code: string
+     * }
+     */
     $data = [
         "name" => $course->fullname,
         "slug" => $course->shortname,
@@ -173,7 +209,8 @@ function create_organization($apiurl, $token, $courseid){
     $stmt->close();
     $conn->close();
     
-    $moodle_members_ids = get_moodle_course_participants($courseid);
+    $moodle_members_ids = get_moodle_course_participants_ids($courseid);
+    $moodle_course_participants_full_info = get_moodle_course_participants_full_info($courseid);
     echo "Moodle member user IDs: <br> <pre>" . json_encode($moodle_members_ids, JSON_PRETTY_PRINT) . "</pre>";
 
     $DMOJ_members_ids = [];
@@ -185,13 +222,69 @@ function create_organization($apiurl, $token, $courseid){
 
         $ids_found = $response['body'];
 
-        // Add in any members of the Moodle course already linked to DMOJ
         foreach ($ids_found as $key => $value) {
-            echo "Key: $key, Value: $value" . PHP_EOL;
-            if ($value != "Not found"){
-                array_push($DMOJ_members_ids, $value);
+            echo "Key: $key, Value: $value" . PHP_EOL . "<br>";
+            if ($value == "Not found"){
+                echo "Member not created, will be created: <br>";
+                echo "- " . $moodle_course_participants_full_info[$key]["username"] . "<br>";
+                echo "- " . $moodle_course_participants_full_info[$key]["email"] . "<br>";
+                echo "- " . $moodle_course_participants_full_info[$key]["first_name"] . "<br>";
+                echo "- " . $moodle_course_participants_full_info[$key]["last_name"] . "<br>";
+                // If not, force create a DMOJ admin account and link the Moodle member to this account
+                $payload = [
+                    $key => [
+                        "username" => $moodle_course_participants_full_info[$key]["username"],
+                        "email" => $moodle_course_participants_full_info[$key]["email"],
+                        "first_name" => $moodle_course_participants_full_info[$key]["first_name"],
+                        "last_name" => $moodle_course_participants_full_info[$key]["last_name"]
+                    ]
+                ];
+                $force_create_DMOJ_user = new ForceCreateDMOJUser($payload);
+                $response = $force_create_DMOJ_user->run();
+                $response['body'] = json_decode($response['body'], true);
+                echo "Force create response: <br> <pre>" . json_encode($response, JSON_PRETTY_PRINT) . "</pre>";
             }
         }
+
+        $response = $DMOJ_IDs_class->run();
+        $response['body'] = json_decode($response['body'], true);
+        echo "DMOJ user IDs found: <br> <pre>" . json_encode($response["body"], JSON_PRETTY_PRINT) . "</pre>";
+        $ids_found = $response['body'];
+
+        foreach ($ids_found as $key => $value) {
+            echo "Key: $key, Value: $value" . PHP_EOL . "<br>";
+            array_push($DMOJ_members_ids, $value["profile_id"]);
+        }
+        /*
+        // Add in any members of the Moodle course already linked to DMOJ
+        foreach ($ids_found as $key => $value) {
+            echo "Key: $key, Value: $value" . PHP_EOL . "<br>";
+            if ($value != "Not found"){
+                array_push($DMOJ_members_ids, $value["profile_id"]);
+            } else {
+                echo "Member not created, will be created: <br>";
+                echo "- " . $moodle_course_participants_full_info[$key]["username"] . "<br>";
+                echo "- " . $moodle_course_participants_full_info[$key]["email"] . "<br>";
+                echo "- " . $moodle_course_participants_full_info[$key]["first_name"] . "<br>";
+                echo "- " . $moodle_course_participants_full_info[$key]["last_name"] . "<br>";
+                // If not, force create a DMOJ admin account and link the Moodle member to this account
+                $payload = [
+                    $key => [
+                        "username" => $moodle_course_participants_full_info[$key]["username"],
+                        "email" => $moodle_course_participants_full_info[$key]["email"],
+                        "first_name" => $moodle_course_participants_full_info[$key]["first_name"],
+                        "last_name" => $moodle_course_participants_full_info[$key]["last_name"]
+                    ]
+                ];
+                $force_create_DMOJ_user = new ForceCreateDMOJUser($payload);
+                $response = $force_create_DMOJ_user->run();
+                $response['body'] = json_decode($response['body'], true);
+                echo "Force create response: <br> <pre>" . json_encode($response, JSON_PRETTY_PRINT) . "</pre>";
+                $DMOJ_id_created = $response["body"]["success"][$key]["dmoj_uid"];//["success"][$key]["dmoj_uid"];
+                array_push($DMOJ_members_ids, $DMOJ_id_created);
+            }
+        }
+        */
     }
 
     echo "Current Moodle course ID: $courseid <br>";
@@ -220,10 +313,11 @@ function create_organization($apiurl, $token, $courseid){
         "access_code" => $access_code
     ];
 
+    echo "DMOJ_members_ids = <br> <pre>" . json_encode($DMOJ_members_ids, JSON_PRETTY_PRINT) . "</pre>";
     $DMOJ_members_edit = new ChangeOrgInfo($dmoj_organization_id_found, $payload_for_editing_org_members);
     $response = $DMOJ_members_edit->run();
     $response['body'] = json_decode($response['body'], true);
-    echo "<pre>" . json_encode($response, JSON_PRETTY_PRINT) . "</pre>";
+    echo "Change Org Info response: <pre>" . json_encode($response, JSON_PRETTY_PRINT) . "</pre>";
 }
 
 $token = get_token($apiurl, $username, $password);
