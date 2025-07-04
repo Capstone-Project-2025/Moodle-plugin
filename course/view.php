@@ -32,6 +32,42 @@
 
     $course = $DB->get_record('course', $params, '*', MUST_EXIST);
 
+    /**
+     * @param int $courseid Course ID, usually collected by `$courseid = required_param('id', PARAM_INT)`
+     * @return int Organization ID from DMOJ linked to this course, or `-1` if no organization is found, or `-2` if connection is failed.
+     */
+    function find_linked_DMOJ_organization(int $course_id){
+        $servername = "localhost";
+        $username = "root";
+        $password = "";
+        $dbname = "moodle40";
+
+        // Create connection
+        $conn = new mysqli($servername, $username, $password, $dbname);
+
+        // Check connection
+        if ($conn->connect_error) {
+            die("Connection failed: " . $conn->connect_error);
+            return -2;
+        }
+
+        $sql = "SELECT * FROM mdl_dmoj_organize WHERE course_id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("i", $course_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        /** @var bool $found */
+        $found = $result->num_rows > 0;
+        if (!$found){
+            return -1;
+        }
+        if ($row = $result->fetch_assoc()) {
+            $dmoj_organization_id_found = $row['organization_id'];
+            return $dmoj_organization_id_found;
+        }
+    }
+
     $urlparams = array('id' => $course->id);
 
     // Sectionid should get priority over section number
@@ -236,6 +272,50 @@
 
     $PAGE->set_heading($course->fullname);
     echo $OUTPUT->header();
+    
+    $courseid = required_param('id', PARAM_INT);
+    $course = get_course($courseid);
+
+    $context = context_course::instance($courseid);
+    global $USER;
+    $userid = $USER->id;
+    /*
+    $roles = get_user_roles($context, $userid, true);
+    echo '<pre>';
+    echo json_encode($roles, JSON_PRETTY_PRINT);
+    echo '</pre>';
+    $roleNames = array_column($roles, 'shortname');
+    */
+
+    $DMOJ_organization_ID_linked = find_linked_DMOJ_organization($courseid);
+    if ($DMOJ_organization_ID_linked == -2){
+        echo "Database connection error, DMOJ organization ID linked to this course cannot be found.<br>";
+    } else if ($DMOJ_organization_ID_linked == -1){
+        echo "This course has not been connected to a DMOJ organization yet.<br>";
+        if (has_capability('mod/dmojorganize:addinstance', $context)) {
+            echo "Go to \"More => Link to DMOJ organization\" to choose to link.";
+        } else {
+            $capability = 'mod/dmojorganize:addinstance';
+            $roles = get_roles_with_capability($capability, CAP_ALLOW, $context);
+
+            echo "Only users with the following roles can choose to link a course to an organization: ";
+            $output = [];
+            foreach ($roles as $role) {
+                $output[] = "{$role->shortname}";
+            }
+            echo implode(', ', $output) . '<br>';
+            echo "Please ask a user with the above roles if you want to link this course to DMOJ. <br>";
+        }
+    } else {
+        echo "This course has been connected to a DMOJ organization with ID: " . $DMOJ_organization_ID_linked . "<br>";
+    }
+
+    /*
+    $courseArray = (array) $course;
+    echo '<pre>';
+    echo json_encode($courseArray, JSON_PRETTY_PRINT);
+    echo '</pre>';
+    */
 
     if ($USER->editing == 1) {
 
