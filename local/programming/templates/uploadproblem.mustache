@@ -1,0 +1,71 @@
+{{#message}}
+<div class="alert alert-info">{{{message}}}</div>
+{{/message}}
+
+<div class="form-container" style="max-width: 800px; margin: auto; padding: 30px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px;">
+    <h3 style="text-align: center; margin-bottom: 20px;">📝 Submit New Problem</h3>
+
+    <form method="post">
+        <input type="hidden" name="sesskey" value="{{sesskey}}">
+
+        <label>Problem code</label>
+        <input type="text" name="code" required style="width: 100%; margin-bottom: 10px;">
+
+        <label>Problem name</label>
+        <input type="text" name="name" required style="width: 100%; margin-bottom: 10px;">
+
+        <label>Description</label>
+        <textarea name="description" rows="6" style="width: 100%; margin-bottom: 10px;"></textarea>
+
+        <label>Time limit (seconds)</label>
+        <input type="number" name="time_limit" value="{{default_time_limit}}" step="0.1" required style="width: 100%; margin-bottom: 10px;">
+
+        <label>Memory limit (KB)</label>
+        <input type="number" name="memory_limit" value="{{default_memory_limit}}" required style="width: 100%; margin-bottom: 10px;">
+
+        <label>Group ID</label>
+        <input type="number" name="group" value="1" required style="width: 100%; margin-bottom: 10px;">
+
+        <label>Difficulty</label>
+        <select name="difficulty" required style="width: 100%; margin-bottom: 10px;">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+        </select>
+
+        <label>Points</label>
+        <input type="range" name="points" min="10" max="100" step="10" value="{{default_points}}" style="width: 100%;" oninput="document.getElementById('pointsval').textContent = this.value">
+        <div style="margin-bottom: 10px;">Selected: <span id="pointsval">{{default_points}}</span> points</div>
+
+        <label>Publicly visible?</label>
+        <input type="checkbox" name="is_public" value="1" checked style="margin-left: 10px;">
+
+        <label>Problems type:</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+            {{#types}}
+            <label style="width: calc(100% / 4 - 10px); display: flex; align-items: center;">
+                <input type="checkbox" name="types[]" value="{{id}}">
+                <span style="margin-left: 6px;">{{name}}</span>
+            </label>
+            {{/types}}
+            {{^types}}
+            <p style="color: red;">⚠️ No problem types found.</p>
+            {{/types}}
+        </div>
+
+        <label>Allowed languages:</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+            {{#languages}}
+            <label style="width: calc(100% / 6 - 10px); display: flex; align-items: center;">
+                <input type="checkbox" name="allowed_languages[]" value="{{id}}">
+                <span style="margin-left: 6px;">{{name}}</span>
+            </label>
+            {{/languages}}
+            {{^languages}}
+            <p style="color: red;">⚠️ No allowed languages found.</p>
+            {{/languages}}
+        </div>
+
+        <input type="submit" name="submit" value="Upload Problem" class="btn btn-primary" style="width: 100%; padding: 10px;">
+    </form>
+</div>

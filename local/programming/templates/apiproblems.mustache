@@ -1,0 +1,64 @@
+<div class="dmoj-wrapper" style="display: flex; gap: 30px;">
+    <div class="dmoj-left" style="flex: 3;">
+        <h2>External Problems</h2>
+
+        {{#hasproblems}}
+        <table class="generaltable" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Points</th>
+                    <th>Public</th>
+                    <th>Difficulty</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#problems}}
+                <tr>
+                    <td>{{code}}</td>
+                    <td>{{name}}</td>
+                    <td>{{points}}</td>
+                    <td>{{ispublic}}</td>
+                    <td>{{difficulty}}</td>
+                    <td><a href="{{addtestcaseurl}}" class="btn btn-secondary">➕ Add Test Case</a></td>
+                </tr>
+                {{/problems}}
+            </tbody>
+        </table>
+        {{{pagination}}}
+        {{/hasproblems}}
+
+        {{^hasproblems}}
+        <div class="notifyproblem">No problems match the selected filters.</div>
+        {{/hasproblems}}
+    </div>
+
+    <div class="dmoj-right" style="flex: 1; background: #f9f9f9; padding: 15px; border: 1px solid #ccc; border-radius: 6px; height: fit-content;">
+        <h4>Problem search</h4>
+        <form method="get">
+            <label>Search by name</label>
+            <input type="text" name="searchname" value="{{searchname}}" placeholder="e.g. Fibonacci" style="width: 100%; margin-bottom: 10px; padding: 5px;">
+
+            <label>Difficulty</label>
+            <select name="searchdifficulty" style="width: 100%; margin-bottom: 10px; padding: 5px;">
+                {{#difficulties}}
+                <option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
+                {{/difficulties}}
+            </select>
+
+            <label>Minimum points:</label>
+            <div style="margin-bottom: 10px;">
+                <input type="range" name="minpoints" id="minpoints" min="0" max="100" step="10" value="{{minpoints}}" style="width: 100%; height: 25px;" oninput="document.getElementById('pointsValue').textContent = this.value">
+                <div style="margin-top: 5px;">Points ≥ <span id="pointsValue">{{minpoints}}</span></div>
+            </div>
+
+            <input type="submit" value="Filter" class="btn btn-primary" style="width: 100%;">
+
+            <a href="{{uploadurl}}" class="btn" style="display: block; text-align: center; margin-top: 10px; padding: 8px; background-color: #28a745; color: white; border-radius: 5px; text-decoration: none;">
+                Upload new problem
+            </a>
+        </form>
+    </div>
+</div>

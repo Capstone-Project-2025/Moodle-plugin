@@ -1,8 +1,15 @@
 <?php
 require_once(__DIR__ . '/../../../../config.php');
+require_once($CFG->dirroot . '/local/programming/classes/api/ProblemSubmission.php');
+
+use local_programming\api\ProblemSubmission;
+
 require_login();
 header('Content-Type: application/json');
 
+global $DB, $USER;
+
+// 📥 Read JSON input
 $input = json_decode(file_get_contents('php://input'), true);
 $submission_id = $input['submission_id'] ?? null;
 
@@ -11,48 +18,72 @@ if (!$submission_id) {
     exit;
 }
 
-// === Authentification API ===
-$apiurl = 'http://139.59.105.152';
-$username = 'admin';
-$password = 'admin';
-
-$curl = curl_init("$apiurl/api/token/");
-curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($curl, CURLOPT_POST, true);
-curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode([
-    'username' => $username,
-    'password' => $password
-]));
-$response = curl_exec($curl);
-curl_close($curl);
-
-$data = json_decode($response, true);
-$token = $data['access'] ?? null;
-
-if (!$token) {
-    echo json_encode(['error' => 'Authentication failed']);
+// 📡 Call the external API using your class
+try {
+    $response = ProblemSubmission::get_by_id($submission_id);
+    $submissiondata = $response['body'] ?? [];
+} catch (Exception $e) {
+    echo json_encode(['error' => 'API error: ' . $e->getMessage()]);
     exit;
 }
 
-// === Appel GET /submission/{id} ===
-$curl = curl_init("$apiurl/api/v2/submission/$submission_id");
-curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($curl, CURLOPT_HTTPHEADER, [
-    'Content-Type: application/json',
-    "Authorization: Bearer $token"
+// 🔎 Check API response structure
+if (!is_array($submissiondata) || empty($submissiondata['data']['object'])) {
+    echo json_encode([
+        'error' => 'Invalid response from API',
+        'raw_response' => $submissiondata
+    ]);
+    exit;
+}
+
+$object = $submissiondata['data']['object'] ?? [];
+
+// 🧠 Extract submission values
+$result        = $object['result'] ?? 'unknown';
+$point         = $object['case_points'] ?? 0.0;
+$total_point   = $object['case_total'] ?? 0.0;
+$source_code   = $object['source_code'] ?? '';
+$language_name = $object['language'] ?? '';
+
+// 🧩 (Optional) Convert language name to language_id
+$languageId = null;
+if (!empty($language_name)) {
+    $sql = "SELECT language_id FROM {local_programming_language} 
+            WHERE " . $DB->sql_compare_text('name') . " = " . $DB->sql_compare_text(':name');
+    $params = ['name' => $language_name];
+    $languageId = $DB->get_field_sql($sql, $params);
+}
+
+// 💾 Update database record if it exists for this user and submission
+$existing = $DB->get_record('qtype_programming_submission', [
+    'submission_id' => $submission_id,
+    'user_id' => $USER->id
 ]);
 
-$response = curl_exec($curl);
-curl_close($curl);
+if ($existing) {
+    $DB->set_field('qtype_programming_submission', 'result', $result, ['submission_id' => $submission_id]);
+    $DB->set_field('qtype_programming_submission', 'point', $point, ['submission_id' => $submission_id]);
+    $DB->set_field('qtype_programming_submission', 'total_point', $total_point, ['submission_id' => $submission_id]);
+    $DB->set_field('qtype_programming_submission', 'code', $source_code, ['submission_id' => $submission_id]);
 
-$submissiondata = json_decode($response, true);
+    // ✅ Only update language_id if a valid ID was found
+    if ($languageId) {
+        $DB->set_field('qtype_programming_submission', 'language_id', $languageId, ['submission_id' => $submission_id]);
+    }
+}
 
+// ✅ Send final JSON response to the client
 echo json_encode([
-    'status' => $submissiondata['data']['object']['status'] ?? 'unknown',
-    'result' => $submissiondata['data']['object']['result'] ?? null,
-    'language' => $submissiondata['data']['object']['language'] ?? null,
-    'time' => $submissiondata['data']['object']['time'] ?? null,
-    'memory' => $submissiondata['data']['object']['memory'] ?? null,
+    'status' => $object['status'] ?? 'unknown',
+    'result' => $result,
+    'language' => $language_name,
+    'time' => $object['time'] ?? null,
+    'memory' => $object['memory'] ?? null,
+    'source_code' => $source_code,
+
+    'case_points' => $point,
+    'case_total' => $total_point,
+    'cases' => $object['cases'] ?? [],
+
     'raw' => $submissiondata
 ]);

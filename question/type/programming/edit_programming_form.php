@@ -8,19 +8,22 @@ class qtype_programming_edit_form extends question_edit_form {
     protected function definition() {
         $mform = $this->_form;
 
-        // 1. Ajout de la liste déroulante
+        // 1. Add dropdown list
         $mform->addElement('select', 'problemlist', get_string('problemname', 'qtype_programming'), []);
         $mform->addRule('problemlist', null, 'required', null, 'client');
 
-        // 2. Juste en dessous : Problem code
+        // 2. Just below: Problem code
         $mform->addElement('text', 'problemcode', get_string('problemcode', 'qtype_programming'));
         $mform->setType('problemcode', PARAM_TEXT);
         $mform->addRule('problemcode', null, 'required', null, 'client');
 
-// 3. Ensuite seulement : champs Moodle classiques
-parent::definition();
+        $mform->addElement('hidden', 'problemid');
+        $mform->setType('problemid', PARAM_INT);
 
-        // Masquer le champ "name"
+        // 3. Then the classic Moodle fields
+        parent::definition();
+
+        // Hide the "name" field
         global $PAGE;
         $PAGE->requires->js_init_code("
             document.addEventListener('DOMContentLoaded', function() {
@@ -50,14 +53,27 @@ parent::definition();
                         .then(response => response.json())
                         .then(data => {
                             if (nameField) nameField.value = data.name || '';
+                            if (codeField) codeField.value = data.code || '';
 
-                            if (window.tinyMCE) {
-                                const editor = tinyMCE.get('id_questiontext');
-                                if (editor) editor.setContent(data.description || '');
-                            } else {
-                                const editorFrame = document.querySelector('[id^=\"id_questiontexteditable\"]');
-                                if (editorFrame) editorFrame.innerHTML = data.description || '';
+                            const problemIdField = document.querySelector('[name=\\\"problemid\\\"]');
+                            if (problemIdField) problemIdField.value = data.id || '';
+
+                            // Fill the question text editor (TinyMCE or Atto)
+                            const questionTextEditorId = 'id_questiontext';
+
+                            // TinyMCE (classic)
+                            if (typeof tinyMCE !== 'undefined' && tinyMCE.get(questionTextEditorId)) {
+                                tinyMCE.get(questionTextEditorId).setContent(data.description || '');
                             }
+
+                            // Atto
+                            if (typeof Y !== 'undefined' && Y.one('#' + questionTextEditorId + '_editable')) {
+                                Y.one('#' + questionTextEditorId + '_editable').setHTML(data.description || '');
+                            }
+
+                            // If no editor is active (fallback)
+                            const rawTextarea = document.getElementById(questionTextEditorId);
+                            if (rawTextarea) rawTextarea.value = data.description || '';
                         });
                 });
             });
@@ -71,7 +87,9 @@ parent::definition();
     public function set_data($question) {
         if (isset($question->options)) {
             $question->problemcode = $question->options->problemcode;
+            $question->problemid = $question->options->problem_id;
         }
         parent::set_data($question);
     }
+
 }

@@ -1,10 +1,12 @@
 <?php
-require_once('../../config.php');
+require_once('../../../config.php');
 require_login();
 
 use local_programming\api\ProblemList;
 
-$PAGE->set_url(new moodle_url('/mod/programmingassign/uploadproblem.php'));
+global $DB, $USER;
+
+$PAGE->set_url(new moodle_url('/local/programming/problems/uploadproblem.php'));
 $PAGE->set_context(context_system::instance());
 $PAGE->set_title('Upload New Problem');
 
@@ -13,117 +15,95 @@ $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_sesskey();
 
-    // 🧾 Récupération des paramètres du formulaire
+    // Récupération des paramètres
     $code = required_param('code', PARAM_TEXT);
     $name = required_param('name', PARAM_TEXT);
     $description = required_param('description', PARAM_RAW);
-    $points = required_param('points', PARAM_INT);
     $time_limit = required_param('time_limit', PARAM_FLOAT);
     $memory_limit = required_param('memory_limit', PARAM_INT);
-    $types = required_param_array('types', PARAM_TEXT); // 👈 peut être PARAM_TEXT si en chaîne CSV
+    $types = required_param_array('types', PARAM_INT);
     $group = required_param('group', PARAM_INT);
     $languages = optional_param_array('allowed_languages', [], PARAM_INT);
+    $difficulty = required_param('difficulty', PARAM_TEXT);
+    $points = max(10, min(required_param('points', PARAM_INT), 100));
+    $ispublic = optional_param('is_public', 0, PARAM_BOOL);
 
-    // Création du tableau de données à envoyer
+    if (!in_array($difficulty, ['easy', 'medium', 'hard'])) {
+        print_error("Invalid difficulty value.");
+    }
+
     $payload = [
         'code' => $code,
         'name' => $name,
         'description' => $description,
         'points' => $points,
+        'difficulty' => $difficulty,
         'time_limit' => $time_limit,
         'memory_limit' => $memory_limit,
         'types' => $types,
         'group' => $group,
         'allowed_languages' => $languages,
-        'is_public' => true
+        'is_public' => (bool)$ispublic
     ];
 
     try {
-        $api = new ProblemList();
-        $response = $api->create($payload);
+        $response = ProblemList::create($payload);
         $status = $response['status'] ?? 0;
 
         if ($status === 201) {
-            $message = html_writer::div('✅ Problem successfully uploaded!', 'alert alert-success');
+            $problem = new stdClass();
+            $problem->code = $code;
+            $problem->name = $name;
+            $problem->description = $description;
+            $problem->userid = $USER->id;
+            $problem->ispublic = $ispublic ? 1 : 0;
+            $problem->points = $points;
+            $problem->difficulty = $difficulty;
+
+            $problemid = $DB->insert_record('local_programming_problem', $problem);
+
+            foreach (array_unique($types) as $typeid) {
+                $type = new stdClass();
+                $type->problem_id = $problemid;
+                $type->type_id = $typeid;
+                $DB->insert_record('local_programming_problem_type', $type);
+            }
+
+            foreach (array_unique($languages) as $langid) {
+                $language = new stdClass();
+                $language->problem_id = $problemid;
+                $language->language_id = $langid;
+                $DB->insert_record('local_programming_problem_language', $language);
+            }
+
+            $message = '✅ Problem successfully uploaded!';
         } else {
-            $body = json_decode($response['body'], true);
+            $body = $response['body'];
             $errormsg = $body['detail'] ?? json_encode($body);
-            $message = html_writer::div("❌ Failed to upload problem (HTTP $status)<br>" . s($errormsg), 'alert alert-danger');
+            $message = "❌ Failed to upload problem (HTTP $status) - $errormsg";
         }
     } catch (Exception $e) {
-        $message = html_writer::div("❌ Error: " . s($e->getMessage()), 'alert alert-danger');
+        $message = "❌ Error: " . $e->getMessage();
     }
 }
 
-echo $OUTPUT->header();
-echo $message;
+// Récupérer types et langages avec réindexation pour Mustache
+$typerecords = $DB->get_records('local_programming_type', null, 'type_id ASC');
+$langrecords = $DB->get_records('local_programming_language', null, 'language_id ASC');
 
-// === Wrapper container ===
-echo html_writer::start_div('form-container', [
-    'style' => 'max-width: 800px; margin: 0 auto; padding: 30px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px;'
-]);
+$types = array_values(array_map(fn($t) => ['id' => $t->type_id, 'name' => $t->name], $typerecords));
+$languages = array_values(array_map(fn($l) => ['id' => $l->language_id, 'name' => $l->name], $langrecords));
 
-echo html_writer::tag('h3', '📝 Submit New Problem', ['style' => 'text-align: center; margin-bottom: 20px;']);
-
-// === Upload Form ===
-echo html_writer::start_tag('form', [
-    'method' => 'post',
-    'action' => '',
-]);
-echo html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
-
-echo html_writer::tag('label', 'Problem code');
-echo html_writer::empty_tag('input', ['type' => 'text', 'name' => 'code', 'required' => true, 'style' => 'width: 100%; margin-bottom: 10px;']);
-
-echo html_writer::tag('label', 'Problem name');
-echo html_writer::empty_tag('input', ['type' => 'text', 'name' => 'name', 'required' => true, 'style' => 'width: 100%; margin-bottom: 10px;']);
-
-echo html_writer::tag('label', 'Description');
-echo html_writer::tag('textarea', '', ['name' => 'description', 'rows' => 6, 'style' => 'width: 100%; margin-bottom: 10px;']);
-
-echo html_writer::tag('label', 'Points');
-echo html_writer::empty_tag('input', ['type' => 'number', 'name' => 'points', 'value' => 100, 'required' => true, 'style' => 'width: 100%; margin-bottom: 10px;']);
-
-echo html_writer::tag('label', 'Time limit (seconds)');
-echo html_writer::empty_tag('input', ['type' => 'number', 'name' => 'time_limit', 'value' => 2.0, 'step' => '0.1', 'required' => true, 'style' => 'width: 100%; margin-bottom: 10px;']);
-
-echo html_writer::tag('label', 'Memory limit (KB)');
-echo html_writer::empty_tag('input', ['type' => 'number', 'name' => 'memory_limit', 'value' => 262144, 'required' => true, 'style' => 'width: 100%; margin-bottom: 10px;']);
-
-echo html_writer::tag('label', 'Problem types (IDs)');
-echo html_writer::empty_tag('input', ['type' => 'text', 'name' => 'types[]', 'value' => '1', 'required' => true, 'style' => 'width: 100%; margin-bottom: 10px;']);
-
-echo html_writer::tag('label', 'Group ID');
-echo html_writer::empty_tag('input', ['type' => 'number', 'name' => 'group', 'value' => 1, 'required' => true, 'style' => 'width: 100%; margin-bottom: 10px;']);
-
-echo html_writer::tag('label', 'Allowed languages:');
-echo '<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">';
-
-$langs = [
-    3 => 'AWK', 17 => 'Brain****', 4 => 'C', 16 => 'C11', 5 => 'C++03',
-    6 => 'C++11', 13 => 'C++14', 15 => 'C++17', 18 => 'C++20',
-    11 => 'Assembly (x86)', 2 => 'Assembly (x64)', 9 => 'Java 8',
-    14 => 'Pascal', 7 => 'Perl', 1 => 'Python 2', 8 => 'Python 3',
-    12 => 'Sed', 10 => 'Text'
+$templatecontext = [
+    'message' => $message,
+    'sesskey' => sesskey(),
+    'default_time_limit' => 2.0,
+    'default_memory_limit' => 262144,
+    'default_points' => 100,
+    'types' => $types,
+    'languages' => $languages
 ];
 
-foreach ($langs as $id => $label) {
-    echo '<label style="width: calc(100% / 6 - 10px); display: flex; align-items: center;">';
-    echo '<input type="checkbox" name="allowed_languages[]" value="' . $id . '" id="lang' . $id . '">';
-    echo '<span style="margin-left: 6px;">' . $label . '</span>';
-    echo '</label>';
-}
-
-echo '</div>';
-
-echo html_writer::empty_tag('input', [
-    'type' => 'submit',
-    'name' => 'submit',
-    'value' => 'Upload Problem',
-    'class' => 'btn btn-primary',
-    'style' => 'width: 100%; padding: 10px;'
-]);
-
-echo html_writer::end_tag('form');
-echo html_writer::end_div();
+echo $OUTPUT->header();
+echo $OUTPUT->render_from_template('local_programming/uploadproblem', $templatecontext);
 echo $OUTPUT->footer();

@@ -4,20 +4,15 @@ namespace local_programming\api;
 defined('MOODLE_INTERNAL') || die();
 
 class APIRequest {
-    public static $ACCESS_TOKEN_URL;
-    public static $REFRESH_TOKEN_URL;
-    public static $storage = [];
+    protected string $url;
+    protected string $method;
+    protected array $headers;
+    protected array $params;
+    protected array $payload;
 
-    public $url;
-    public $method;
-    public $headers;
-    public $params;
-    public $payload;
+    protected static array $tokens = [];
 
-    public function __construct($url, $method, array $headers = [], array $params = [], array $payload = []) {
-        self::$ACCESS_TOKEN_URL = config::DOMAIN . "/api/token/";
-        self::$REFRESH_TOKEN_URL = config::DOMAIN . "/api/token/refresh/";
-
+    public function __construct(string $url, string $method, array $headers = [], array $params = [], array $payload = []) {
         $this->url = $url;
         $this->method = strtoupper($method);
         $this->headers = $headers;
@@ -25,53 +20,32 @@ class APIRequest {
         $this->payload = $payload;
     }
 
-    public function send() {
-        if (!isset($this->headers['Authorization'])) {
-        $access_token = self::$storage['access_token'] ?? null;
-        if ($access_token) {
-            $this->headers['Authorization'] = "Bearer {$access_token}";
+    public function run(): array {
+        $this->ensureAccessToken();
+        $response = $this->send();
+
+        if ($response['status'] === 401) {
+            try {
+                $this->refreshToken();
+                $response = $this->send();
+            } catch (\Exception $e) {
+                $this->clearTokens();
+                $this->ensureAccessToken();
+                $response = $this->send();
+            }
         }
+
+        return $response;
     }
 
-    if (!isset($this->headers['Content-Type'])) {
-        $this->headers['Content-Type'] = 'application/json';
+    protected function ensureAccessToken(): void {
+        if (empty(self::$tokens['access_token'])) {
+            $this->fetchAccessToken();
+        }
+        $this->headers['Authorization'] = 'Bearer ' . self::$tokens['access_token'];
     }
 
-        $formattedHeaders = [];
-        foreach ($this->headers as $key => $value) {
-            $formattedHeaders[] = "$key: $value";
-        }
-
-        if (in_array($this->method, ['GET', 'DELETE']) && !empty($this->params)) {
-            $queryString = http_build_query($this->params);
-            $this->url .= (strpos($this->url, '?') === false ? '?' : '&') . $queryString;
-        }
-
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $this->method);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $formattedHeaders);
-
-        if (in_array($this->method, ['POST', 'PUT'])) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($this->payload));
-            $formattedHeaders[] = 'Content-Type: application/json';
-        }
-
-        $responseBody = curl_exec($ch);
-        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-
-        curl_close($ch);
-
-        return [
-            'status' => $statusCode,
-            'body' => $responseBody,
-            'error' => $error ?: null
-        ];
-    }
-
-    public function GetAccessToken() {
+    protected function fetchAccessToken(): void {
         require_login();
         global $USER;
 
@@ -81,89 +55,119 @@ class APIRequest {
             "uid" => $USER->id
         ];
 
-        $ch = curl_init(self::$ACCESS_TOKEN_URL);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        $response = $this->curlRequest(config::ACCESS_TOKEN_URL, 'POST', $payload);
 
-        $responseBody = curl_exec($ch);
-        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        if ($response['status'] === 200 && isset($response['body']['access'], $response['body']['refresh'])) {
+            self::$tokens = [
+                'access_token' => $response['body']['access'],
+                'refresh_token' => $response['body']['refresh']
+            ];
+        } else {
+            throw new \Exception("Access token fetch failed: HTTP {$response['status']}");
+        }
+    }
+
+    protected function refreshToken(): void {
+        $payload = ["refresh" => self::$tokens["refresh_token"]];
+        $response = $this->curlRequest(config::REFRESH_TOKEN_URL, 'POST', $payload);
+
+        if ($response['status'] === 200 && isset($response['body']['access'], $response['body']['refresh'])) {
+            self::$tokens = [
+                'access_token' => $response['body']['access'],
+                'refresh_token' => $response['body']['refresh']
+            ];
+        } else {
+            throw new \Exception("Token refresh failed: HTTP {$response['status']}");
+        }
+    }
+
+    protected function clearTokens(): void {
+        self::$tokens = [];
+    }
+
+    protected function curlRequest(string $url, string $method, array $payload = []): array {
+        $ch = curl_init($url);
+        $headers = ['Content-Type: application/json'];
+
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, strtoupper($method));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+
+        if (!empty($payload)) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        }
+
+        $body = curl_exec($ch);
+        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error = curl_error($ch);
         curl_close($ch);
 
-        if ($error) {
-            throw new \Exception("cURL Error: $error");
-        }
-
-        $responseData = json_decode($responseBody, true);
-
-        if ($statusCode === 200 && isset($responseData['access'], $responseData['refresh'])) {
-            self::$storage['access_token'] = $responseData['access'];
-            self::$storage['refresh_token'] = $responseData['refresh'];
-            return $responseData;
-        } else {
-            throw new \Exception("Failed to obtain access token: HTTP $statusCode");
-        }
+        return [
+            'status' => $status,
+            'body' => json_decode($body, true),
+            'error' => $error ?: null
+        ];
     }
 
-    public function TryRefreshToken() {
-        $payload = ["refresh" => self::$storage["refresh_token"]];
-
-        $ch = curl_init(self::$REFRESH_TOKEN_URL);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-
-        $responseBody = curl_exec($ch);
-        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
-
-        if ($error) {
-            throw new \Exception("cURL Error: $error");
-        }
-
-        $responseData = json_decode($responseBody, true);
-
-        if ($statusCode === 200 && isset($responseData['access'], $responseData['refresh'])) {
-            self::$storage['access_token'] = $responseData['access'];
-            self::$storage['refresh_token'] = $responseData['refresh'];
-            return $responseData;
-        } else {
-            throw new \Exception("Failed to refresh token: HTTP $statusCode");
-        }
+    protected function is_multipart_request(): bool {
+        return $this->has_file_in_array($this->payload);
     }
 
-    public function ClearTokens() {
-        unset(self::$storage['access_token']);
-        unset(self::$storage['refresh_token']);
-    }
-
-    public function run() {
-        $this->GetAccessToken();
-        $response = $this->send();
-
-        if ($response["status"] == 401) {
-            try {
-                $this->TryRefreshToken();
-                $response = $this->send();
-            } catch (\Exception $e) {
-                $this->ClearTokens();
-                try {
-                    $this->GetAccessToken();
-                    $response = $this->send();
-                } catch (\Exception $e) {
-                    if ($this->method == "GET") {
-                        $response = $this->send();
-                    } else {
-                        throw new \Exception("Cannot send authenticated request without valid token");
-                    }
+    private function has_file_in_array(array $data): bool {
+        foreach ($data as $value) {
+            if ($value instanceof \CURLFile) {
+                return true;
+            } elseif (is_array($value)) {
+                if ($this->has_file_in_array($value)) {
+                    return true;
                 }
             }
         }
+        return false;
+    }
 
-        return $response;
+    protected function send(): array {
+        $fullurl = $this->url;
+        if (!empty($this->params)) {
+            $query = http_build_query($this->params);
+            $fullurl .= (strpos($this->url, '?') === false ? '?' : '&') . $query;
+        }
+
+        $ch = curl_init($fullurl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $this->method);
+
+        $formattedHeaders = [];
+
+        // Prepare the data to send
+        if (in_array($this->method, ['POST', 'PUT']) && !empty($this->payload)) {
+            if ($this->is_multipart_request()) {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $this->payload);
+                // Let cURL handle multipart Content-Type automatically
+            } else {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($this->payload));
+            }
+        }
+
+        // Add headers once payload is ready
+        foreach ($this->headers as $k => $v) {
+            if (strtolower($k) === 'content-type' && $this->is_multipart_request()) {
+                continue; // Skip forcing multipart Content-Type
+            }
+            $formattedHeaders[] = "$k: $v";
+        }
+
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $formattedHeaders);
+
+        $body = curl_exec($ch);
+        $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        return [
+            'status' => $status,
+            'body' => json_decode($body, true),
+            'error' => $error ?: null
+        ];
     }
 }

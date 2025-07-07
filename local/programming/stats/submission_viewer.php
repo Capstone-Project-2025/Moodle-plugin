@@ -19,7 +19,7 @@ echo $OUTPUT->heading("Submission #$sid");
 try {
     // 🔍 1. Appel API pour les infos de soumission
     $res = ProblemSubmission::get_by_id($sid);
-    $data = json_decode($res['body'], true);
+    $data = $res['body'];
     $submission = $data['data']['object'] ?? null;
 
     if (!$submission) {
@@ -42,10 +42,11 @@ try {
     echo html_writer::tag('p', "<strong>Statut :</strong> $status");
     echo html_writer::tag('p', "<strong>Score final :</strong> $casepoints / $casetotal ($points points)");
     echo html_writer::end_tag('div');
-
+    
     // 🔍 2. Récupérer les cas de test attendus via l'API
-    $res2 = ProblemTestData::get_by_problemcode($problemcode);
-    $testcases = json_decode($res2['body'], true)['data']['test_cases'] ?? [];
+    $res2 = ProblemTestData::get_data($problemcode);
+
+    $testcases = $res2['body']['data']['test_cases'] ?? [];
 
     echo html_writer::tag('h3', "Test results");
 

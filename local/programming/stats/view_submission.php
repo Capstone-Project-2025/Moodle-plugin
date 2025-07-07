@@ -1,8 +1,6 @@
 <?php
+
 require('../../../config.php');
-
-use local_programming\api\ProblemSubmission;
-
 require_login();
 
 $userid = $USER->id;
@@ -19,6 +17,7 @@ echo $OUTPUT->heading("All my submissions");
 
 global $DB;
 
+// === Paramètres de pagination et filtres
 $page = optional_param('page', 0, PARAM_INT);
 $perpage = 15;
 $start = $page * $perpage;
@@ -26,6 +25,7 @@ $start = $page * $perpage;
 $statusfilter = optional_param('status', '', PARAM_ALPHANUM);
 $languagefilter = optional_param('language', '', PARAM_TEXT);
 
+// === Récupérer toutes les soumissions de l’utilisateur
 $allsubmissions = $DB->get_records('qtype_programming_submission', ['user_id' => $userid], 'submission_id DESC');
 
 $filteredsubmissions = [];
@@ -33,34 +33,60 @@ $statuscounts = [];
 
 foreach ($allsubmissions as $sub) {
     $submissionid = $sub->submission_id;
+    $result = $sub->result ?? '---';
+    $questionid = $sub->question_id;
+    $point = $sub->point ?? 0;
+    $total = $sub->total_point ?? 0;
 
-    try {
-        $response = ProblemSubmission::get_by_id($submissionid);
-        $data = json_decode($response['body'], true);
-        $obj = $data['data']['object'] ?? null;
-    } catch (Exception $e) {
-        continue;
+    // Aller chercher le problem_id via la question
+    $option = $DB->get_record('qtype_programming_options', ['id' => $questionid]);
+    if (!$option) continue;
+    $problemid = $option->problem_id;
+
+    // Nom du problème
+    $problem = $DB->get_record('local_programming_problem', ['id' => $problemid]);
+    $problemname = $problem->name ?? 'Unknown problem';
+
+    // Langages associés au problème
+    $langids = $DB->get_records('local_programming_problem_language', ['problem_id' => $problemid]);
+    $languages = [];
+    foreach ($langids as $lang) {
+        $lname = $DB->get_field('local_programming_language', 'name', ['id' => $lang->language_id]);
+        if ($lname) $languages[] = strtoupper($lname);
     }
+    $language = !empty($languages) ? implode(', ', $languages) : '---';
 
-    if (!is_array($obj)) continue;
+    // Filtres
+    if ($statusfilter && strtolower($result) !== strtolower($statusfilter)) continue;
+    if ($languagefilter && stripos($language, $languagefilter) === false) continue;
 
-    $obj['submission_id'] = $submissionid;
+    // Date
+    $timestamp = $sub->timecreated ?? time();
+    $dateStr = format_time(time() - $timestamp);
 
-    if ($statusfilter && strtolower($obj['result']) !== strtolower($statusfilter)) continue;
-    if ($languagefilter && strtolower($obj['language']) !== strtolower($languagefilter)) continue;
-
-    $result = $obj['result'] ?? '---';
+    // Stats
     $statuscounts[$result] = ($statuscounts[$result] ?? 0) + 1;
 
-    $filteredsubmissions[] = $obj;
+    $filteredsubmissions[] = (object)[
+        'submission_id' => $submissionid,
+        'result' => $result,
+        'language' => $language,
+        'problem' => $problemname,
+        'dateStr' => $dateStr,
+        'points' => "$point / $total",
+        'time' => $sub->time ?? null,
+        'memory' => $sub->memory ?? null,
+    ];
 }
 
+// Pagination
 $total = count($filteredsubmissions);
 $submissions = array_slice($filteredsubmissions, $start, $perpage);
 
+// === Mise en page
 echo html_writer::start_div('d-flex', ['style' => 'gap:30px; align-items:flex-start;']);
 
-// 📋 Colonne principale
+// === Colonne principale
 echo html_writer::start_div('flex-fill');
 
 $url = new moodle_url('/local/programming/stats/view_submission.php', ['id' => $userid]);
@@ -72,16 +98,14 @@ if (empty($submissions)) {
     echo $OUTPUT->notification("No submissions found.");
 } else {
     foreach ($submissions as $obj) {
-        $submissionid = $obj['submission_id'];
-        $results = $obj['result'] ?? '---';
-        $status = $obj['status'] ?? '---';
-        $language = $obj['language'] ?? '---';
-        $problem = $obj['problem'] ?? '---';
-        $date = strtotime($obj['date'] ?? '');
-        $dateStr = $date ? format_time(time() - $date) : '---';
-        $points = ($obj['case_points'] ?? 0.0) . ' / ' . ($obj['case_total'] ?? 0.0);
-        $time = $obj['time'] ? round($obj['time'], 2) . 's' : '---';
-        $memory = $obj['memory'] ? format_float($obj['memory'] / 1024 / 1024, 2) . ' Mio' : '---';
+        $submissionid = $obj->submission_id;
+        $results = $obj->result;
+        $language = $obj->language;
+        $problem = $obj->problem;
+        $dateStr = $obj->dateStr;
+        $points = $obj->points;
+        $time = $obj->time ? round($obj->time, 2) . 's' : '---';
+        $memory = $obj->memory ? format_float($obj->memory / 1024 / 1024, 2) . ' Mio' : '---';
 
         $color = match ($results) {
             'AC' => '#4CAF50',
@@ -114,9 +138,10 @@ if (empty($submissions)) {
 
     echo $OUTPUT->paging_bar($total, $page, $perpage, $url);
 }
+
 echo html_writer::end_div(); // flex-fill
 
-// 📊 Colonne latérale (filtres + stats)
+// === Colonne latérale
 echo html_writer::start_div('', ['style' => 'width:300px;']);
 
 // === Filtres
@@ -141,14 +166,11 @@ foreach ([
 }
 echo html_writer::end_tag('select');
 
-// Langages
+// Langages (static, à personnaliser si besoin)
 echo html_writer::tag('label', 'Language');
 echo html_writer::start_tag('select', ['name' => 'language', 'class' => 'form-select mb-2']);
 echo html_writer::tag('option', 'All', ['value' => '']);
-foreach ([
-    'AWK', 'BRAIN****', 'C', 'C11', 'CPP03', 'CPP11', 'CPP14', 'CPP17', 'CPP20',
-    'GAS', 'GAS64', 'JAVA8', 'PASCAL', 'PERL', 'PY2', 'PY3', 'SED', 'TEXT'
-] as $code) {
+foreach (['PYTHON 2', 'PYTHON 3', 'C', 'C++', 'JAVA 8', 'CPP14', 'CPP17', 'CPP20'] as $code) {
     $selected = ($languagefilter === $code) ? ['selected' => 'selected'] : [];
     echo html_writer::tag('option', $code, ['value' => $code] + $selected);
 }
@@ -159,7 +181,7 @@ echo html_writer::end_tag('form');
 echo html_writer::end_div();
 echo html_writer::end_div();
 
-// === Statistiques
+// === Statistiques (chart.js)
 echo html_writer::start_div('card');
 echo html_writer::start_div('card-body');
 echo html_writer::tag('h5', 'Statistics', ['class' => 'card-title']);
@@ -167,11 +189,10 @@ echo '<canvas id="submissionChart" width="260" height="260"></canvas>';
 echo html_writer::tag('p', 'Total: ' . array_sum($statuscounts), ['style' => 'text-align:center;']);
 echo html_writer::end_div();
 echo html_writer::end_div();
+echo html_writer::end_div(); // sidebar
+echo html_writer::end_div(); // layout container
 
-echo html_writer::end_div(); // colonne latérale
-echo html_writer::end_div(); // row container
-
-// CHART.JS
+// === Chart.js rendering
 $labels = array_keys($statuscounts);
 $data = array_values($statuscounts);
 $colors = array_map(function ($status) {

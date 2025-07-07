@@ -1,0 +1,73 @@
+<div class="form-container" style="max-width: 1000px; margin: auto;">
+  {{{message}}}
+
+  <h3>🛠️ Edit Problem Data: {{code}}</h3>
+
+  {{#zipfileurl}}
+    <p>📁 <a href="{{zipfileurl}}" target="_blank">Download current zip file</a></p>
+  {{/zipfileurl}}
+
+  <form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="sesskey" value="{{sesskey}}">
+
+    <label>Checker</label>
+    <input type="text" name="checker" value="{{metadata.checker}}" class="form-control" style="margin-bottom: 15px;">
+
+    <label>Output Limit Length</label>
+    <input type="number" name="output_limit" value="{{metadata.output_limit}}" class="form-control">
+
+    <label>Output Prefix Length</label>
+    <input type="number" name="output_prefix" value="{{metadata.output_prefix}}" class="form-control">
+
+    <label><input type="checkbox" name="unicode" {{#metadata.unicode}}checked{{/metadata.unicode}}> Enable Unicode</label><br>
+    <label><input type="checkbox" name="nobigmath" {{#metadata.nobigmath}}checked{{/metadata.nobigmath}}> Disable bigInteger / bigDecimal</label><br><br>
+
+    <label>📦 Data zip file (.zip)</label>
+    <input type="file" name="zipfile" accept=".zip" class="form-control">
+
+    <label>⚙️ Generator file (optional)</label>
+    <input type="file" name="generatorfile" accept=".py,.cpp,.sh,.txt" class="form-control">
+
+    <h4>✏️ Existing Test Cases</h4>
+    <table class="generaltable" id="testcase-table" style="width: 100%; margin-bottom: 20px;">
+      <thead>
+        <tr><th>Type</th><th>Input File</th><th>Output File</th><th>Points</th><th>Order</th><th>Action</th></tr>
+      </thead>
+      <tbody id="testcase-body">
+        {{#testcases}}
+          <tr>
+            <td><input type="text" name="test_cases[{{@index}}][type]" value="{{type}}" class="form-control"></td>
+            <td><input type="text" name="test_cases[{{@index}}][input_file]" value="{{input_file}}" class="form-control"></td>
+            <td><input type="text" name="test_cases[{{@index}}][output_file]" value="{{output_file}}" class="form-control"></td>
+            <td><input type="number" name="test_cases[{{@index}}][points]" value="{{points}}" class="form-control"></td>
+            <td><input type="number" name="test_cases[{{@index}}][order]" value="{{order}}" class="form-control"></td>
+            <td><button type="button" onclick="removeRow(this)">❌</button></td>
+          </tr>
+        {{/testcases}}
+      </tbody>
+    </table>
+
+    <button type="button" class="btn btn-secondary" onclick="addTestCase()">➕ Add Test Case</button><br><br>
+    <input type="submit" value="💾 Submit Changes" class="btn btn-primary">
+  </form>
+</div>
+
+<script>
+function addTestCase() {
+    let caseIndex = document.querySelectorAll('#testcase-body tr').length;
+    const tbody = document.getElementById('testcase-body');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="text" name="test_cases[${caseIndex}][type]" value="C" class="form-control"></td>
+        <td><input type="text" name="test_cases[${caseIndex}][input_file]" class="form-control"></td>
+        <td><input type="text" name="test_cases[${caseIndex}][output_file]" class="form-control"></td>
+        <td><input type="number" name="test_cases[${caseIndex}][points]" value="0" class="form-control"></td>
+        <td><input type="number" name="test_cases[${caseIndex}][order]" value="${caseIndex + 1}" class="form-control"></td>
+        <td><button type="button" onclick="removeRow(this)">❌</button></td>
+    `;
+    tbody.appendChild(row);
+}
+function removeRow(button) {
+    button.closest('tr').remove();
+}
+</script>
