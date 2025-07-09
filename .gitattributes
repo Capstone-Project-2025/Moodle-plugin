@@ -1,6 +1,7 @@
-**/yui/build/** -diff
+# Prevent diffs on compiled JavaScript files in AMD build
 **/amd/build/** -diff
-lib/dml/oci_native_moodle_package.sql text eol=lf
+
+# Prevent diffs on source map and minified JS files
 **.js.map -diff
 **-min.js -diff
 **.min.js -diff
