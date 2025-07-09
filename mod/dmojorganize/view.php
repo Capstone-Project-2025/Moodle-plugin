@@ -61,11 +61,11 @@ $moodle_ids = [];
 
 // Loop through users and print user ID and their roles
 foreach ($users as $user) {
-    echo "User ID: {$user->id}<br>";
-    echo "Username: {$user->username}<br>";
-    echo "User email: {$user->email}<br>";
-    echo "User first name: {$user->firstname}<br>";
-    echo "User last name: {$user->lastname}<br>";
+    //echo "User ID: {$user->id}<br>";
+    //echo "Username: {$user->username}<br>";
+    //echo "User email: {$user->email}<br>";
+    //echo "User first name: {$user->firstname}<br>";
+    //echo "User last name: {$user->lastname}<br>";
 
     // $user->id is string, but API request requires integers
     array_push($moodle_ids, (int) $user->id);
@@ -73,29 +73,29 @@ foreach ($users as $user) {
     // Get roles assigned to this user in the course context
     $user_roles = get_user_roles($context, $user->id, false);
     
-    echo "Roles: ";
+    //echo "Roles: ";
     if (!empty($user_roles)) {
         foreach ($user_roles as $role) {
-            echo role_get_name($role, $context) . ' ';
+            //echo role_get_name($role, $context) . ' ';
         }
     } else {
-        echo 'No role assigned';
+        //echo 'No role assigned';
     }
-    echo "<br><br>";
+    //echo "<br><br>";
 }
-print_r($moodle_ids);
-echo "<br>";
+//print_r($moodle_ids);
+//echo "<br>";
 
 $DMOJ_IDs_class = new FetchDMOJid([], $moodle_ids);
 $response = $DMOJ_IDs_class->run();
 $response['body'] = json_decode($response['body'], true);
-echo "<pre> DMOJ user IDs found: " . json_encode($response, JSON_PRETTY_PRINT) . "</pre>";
+//echo "<pre> DMOJ user IDs found: " . json_encode($response, JSON_PRETTY_PRINT) . "</pre>";
 
 $DMOJ_organization_collected = new GetOrgDetail($dmoj_organization_id_found);
 $response = $DMOJ_organization_collected->run();
 $response['body'] = json_decode($response['body'], true);
 if ($response["status"] == 200) {
-    echo "<pre> DMOJ organization info: " . json_encode($response["body"]["data"]["object"], JSON_PRETTY_PRINT) . "</pre>";
+    //echo "<pre> DMOJ organization info: " . json_encode($response["body"]["data"]["object"], JSON_PRETTY_PRINT) . "</pre>";
 }
 ?>
 <!DOCTYPE html>
@@ -121,7 +121,9 @@ if ($response["status"] == 200) {
         <br>
         <label>DMOJ organization ID linked: <?php echo htmlspecialchars($dmoj_organization_id_found); ?></label>
         <br>
-        <button type="submit">Force sync Moodle participants list to DMOJ organization member list</button>
+        <form action="forcesync.php?id=<?php echo $courseid; ?>&organization_id=<?php echo $dmoj_organization_id_found; ?>" method="POST">
+            <button type="submit">Force sync Moodle participants list to DMOJ organization member list</button>
+        </form>
     <?php endif; ?>
     <br>
   </body>

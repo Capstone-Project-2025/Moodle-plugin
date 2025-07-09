@@ -136,7 +136,7 @@ function get_moodle_course_teachers_managers(int $courseid) {
 
         $admin_role_found = false;
         foreach ($roles as $role) {
-            echo "Role shortname: ". $role->shortname . " <br>";
+            //echo "Role shortname: ". $role->shortname . " <br>";
             if (!$admin_role_found && (in_array($role->shortname, ['editingteacher', 'manager'], true))){
                 $admin_role_found = true;
                 array_push($admin_ids, (int) $user->id);
@@ -233,26 +233,28 @@ function create_organization($apiurl, $token, $courseid){
     $moodle_members_ids = get_moodle_course_participants_ids($courseid);
     $moodle_admin_ids = get_moodle_course_teachers_managers($courseid);
     $moodle_course_participants_full_info = get_moodle_course_participants_full_info($courseid);
-    echo "Moodle member user IDs: <br> <pre>" . json_encode($moodle_members_ids, JSON_PRETTY_PRINT) . "</pre>";
-    echo "Moodle admin IDs: <br> <pre>" . json_encode($moodle_admin_ids, JSON_PRETTY_PRINT) . "</pre>";
+    //echo "Moodle member user IDs: <br> <pre>" . json_encode($moodle_members_ids, JSON_PRETTY_PRINT) . "</pre>";
+    //echo "Moodle admin IDs: <br> <pre>" . json_encode($moodle_admin_ids, JSON_PRETTY_PRINT) . "</pre>";
 
     $DMOJ_members_ids = [];
     $DMOJ_IDs_class = new FetchDMOJid([], $moodle_members_ids);
     $response = $DMOJ_IDs_class->run();
     if ($response["status"] == 200){
         $response['body'] = json_decode($response['body'], true);
-        echo "DMOJ user IDs found: <br> <pre>" . json_encode($response["body"], JSON_PRETTY_PRINT) . "</pre>";
+        //echo "DMOJ user IDs found: <br> <pre>" . json_encode($response["body"], JSON_PRETTY_PRINT) . "</pre>";
 
         $ids_found = $response['body'];
 
         foreach ($ids_found as $key => $value) {
-            echo "Key: $key, Value: $value" . PHP_EOL . "<br>";
+            //echo "Key: $key, Value: $value" . PHP_EOL . "<br>";
             if ($value == "Not found"){
+                /*
                 echo "Member not created, will be created: <br>";
                 echo "- " . $moodle_course_participants_full_info[$key]["username"] . "<br>";
                 echo "- " . $moodle_course_participants_full_info[$key]["email"] . "<br>";
                 echo "- " . $moodle_course_participants_full_info[$key]["first_name"] . "<br>";
                 echo "- " . $moodle_course_participants_full_info[$key]["last_name"] . "<br>";
+                */
                 // If not, force create a DMOJ admin account and link the Moodle member to this account
                 $payload = [
                     $key => [
@@ -265,17 +267,17 @@ function create_organization($apiurl, $token, $courseid){
                 $force_create_DMOJ_user = new ForceCreateDMOJUser($payload);
                 $response = $force_create_DMOJ_user->run();
                 $response['body'] = json_decode($response['body'], true);
-                echo "Force create response: <br> <pre>" . json_encode($response, JSON_PRETTY_PRINT) . "</pre>";
+                //echo "Force create response: <br> <pre>" . json_encode($response, JSON_PRETTY_PRINT) . "</pre>";
             }
         }
 
         $response = $DMOJ_IDs_class->run();
         $response['body'] = json_decode($response['body'], true);
-        echo "DMOJ user IDs found: <br> <pre>" . json_encode($response["body"], JSON_PRETTY_PRINT) . "</pre>";
+        //echo "DMOJ user IDs found: <br> <pre>" . json_encode($response["body"], JSON_PRETTY_PRINT) . "</pre>";
         $ids_found = $response['body'];
 
         foreach ($ids_found as $key => $value) {
-            echo "Key: $key, Value: $value" . PHP_EOL . "<br>";
+            //echo "Key: $key, Value: $value" . PHP_EOL . "<br>";
             array_push($DMOJ_members_ids, $value["profile_id"]);
         }
         /*
@@ -322,15 +324,15 @@ function create_organization($apiurl, $token, $courseid){
         }
     }
 
-    echo "Current Moodle course ID: $courseid <br>";
+    //echo "Current Moodle course ID: $courseid <br>";
     $dmoj_organization_id_found = find_dmoj_organization_id($courseid);
-    echo "Linked DMOJ organization ID: " . $dmoj_organization_id_found;
+    //echo "Linked DMOJ organization ID: " . $dmoj_organization_id_found;
 
     $DMOJ_organization_collected = new GetOrgDetail($dmoj_organization_id_found);
     $response = $DMOJ_organization_collected->run();
     $response['body'] = json_decode($response['body'], true);
     if ($response["status"] == 200) {
-        echo "<br> DMOJ organization info: <br> <pre>" . json_encode($response["body"]["data"]["object"], JSON_PRETTY_PRINT) . "</pre>";
+        //echo "<br> DMOJ organization info: <br> <pre>" . json_encode($response["body"]["data"]["object"], JSON_PRETTY_PRINT) . "</pre>";
     }
     $name = $response["body"]["data"]["object"]["name"];
     $slug = $response["body"]["data"]["object"]["slug"];
@@ -349,12 +351,12 @@ function create_organization($apiurl, $token, $courseid){
         "access_code" => $access_code
     ];
 
-    echo "DMOJ_members_ids = <br> <pre>" . json_encode($DMOJ_members_ids, JSON_PRETTY_PRINT) . "</pre>";
-    echo "DMOJ_admin_ids = <br> <pre>" . json_encode($DMOJ_admin_ids, JSON_PRETTY_PRINT) . "</pre>";
+    //echo "DMOJ_members_ids = <br> <pre>" . json_encode($DMOJ_members_ids, JSON_PRETTY_PRINT) . "</pre>";
+    //echo "DMOJ_admin_ids = <br> <pre>" . json_encode($DMOJ_admin_ids, JSON_PRETTY_PRINT) . "</pre>";
     $DMOJ_members_edit = new ChangeOrgInfo($dmoj_organization_id_found, $payload_for_editing_org_members);
     $response = $DMOJ_members_edit->run();
     $response['body'] = json_decode($response['body'], true);
-    echo "Change Org Info response: <pre>" . json_encode($response, JSON_PRETTY_PRINT) . "</pre>";
+    //echo "Change Org Info response: <pre>" . json_encode($response, JSON_PRETTY_PRINT) . "</pre>";
 }
 
 $token = get_token($apiurl, $username, $password);
