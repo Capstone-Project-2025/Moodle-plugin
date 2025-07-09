@@ -120,6 +120,8 @@ if ($response["status"] == 200) {
         <label>This course has already been linked to a DMOJ organization and this option cannot be disabled.</label>
         <br>
         <label>DMOJ organization ID linked: <?php echo htmlspecialchars($dmoj_organization_id_found); ?></label>
+        <br>
+        <button type="submit">Force sync Moodle participants list to DMOJ organization member list</button>
     <?php endif; ?>
     <br>
   </body>
