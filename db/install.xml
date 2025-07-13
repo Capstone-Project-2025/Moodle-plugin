@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="mod/dmojorganize/db" VERSION="20140829" COMMENT="Table to add relationship between Moodle course ID and DMOJ organization ID"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+<TABLES>
+    <TABLE NAME="dmoj_organize" COMMENT="Relationship between Moodle course ID and DMOJ organization ID">
+        <FIELDS>
+            <FIELD NAME="course_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+            <FIELD NAME="organization_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        </FIELDS>
+        <KEYS>
+            <KEY NAME="primary" TYPE="primary" FIELDS="course_id"/>
+        </KEYS>
+    </TABLE>
+</TABLES>
+</XMLDB>
