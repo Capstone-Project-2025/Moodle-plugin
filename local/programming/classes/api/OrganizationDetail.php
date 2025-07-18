@@ -8,7 +8,7 @@ class OrganizationDetail extends APIRequest {
     protected $orgid;
 
     /**
-     * Constructeur : conserve l’ID pour les appels suivants
+     * Constructor: stores the organization ID for subsequent calls.
      */
     public function __construct(int $orgid) {
         $this->orgid = $orgid;
@@ -16,7 +16,7 @@ class OrganizationDetail extends APIRequest {
 
     /**
      * GET /api/v2/organization/{id}
-     * Récupère les détails d’une organisation
+     * Retrieves details of an organization.
      */
     public function get() {
         $this->url = config::DOMAIN . "/api/v2/organization/{$this->orgid}";
@@ -28,7 +28,7 @@ class OrganizationDetail extends APIRequest {
 
     /**
      * PUT /api/v2/organization/{id}
-     * Met à jour une organisation
+     * Updates an organization's details.
      */
     public function update(array $orgdata) {
         $this->url = config::DOMAIN . "/api/v2/organization/{$this->orgid}";
@@ -41,7 +41,7 @@ class OrganizationDetail extends APIRequest {
 
     /**
      * DELETE /api/v2/organization/{id}
-     * Supprime une organisation
+     * Deletes an organization.
      */
     public function delete() {
         $this->url = config::DOMAIN . "/api/v2/organization/{$this->orgid}";

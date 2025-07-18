@@ -6,39 +6,42 @@ defined('MOODLE_INTERNAL') || die();
 class ProblemList extends APIRequest {
 
     /**
-     * GET /api/v2/problems
-     * Récupère la liste des problèmes accessibles
+     * Constructor for listing problems with optional query parameters.
      */
-    public function get($params = []) {
-        $this->url = config::DOMAIN . "/api/v2/problems";
-        $this->method = "GET";
-        $this->headers = ['Accept' => 'application/json'];
-        $this->params = $params;
-        return $this->run();
+    public function __construct(array $params = []) {
+        parent::__construct(
+            config::DOMAIN . "/api/v2/problems",
+            "GET",
+            ['Accept' => 'application/json'],
+            $params
+        );
     }
 
     /**
-     * POST /api/v2/problems
-     * Crée un nouveau problème avec les données spécifiées
+     * Static method to retrieve all problems.
      */
-    public function create(array $probleminfo) {
-        $this->url = config::DOMAIN . "/api/v2/problems";
-        $this->method = "POST";
-        $this->headers = ['Content-Type' => 'application/json'];
-        $this->payload = $probleminfo;
-        return $this->run();
+    public static function get_all(): array {
+        return (new self())->run();
     }
 
+    /**
+     * Static method to retrieve problems filtered by type.
+     */
     public static function get_by_type(string $type): array {
-        $url = config::DOMAIN . "/api/v2/problems";
-        $params = ['type' => $type];
-        $request = new self($url, "GET", [], $params);
+        return (new self(['type' => $type]))->run();
+    }
+
+    /**
+     * Static method to create a new problem.
+     */
+    public static function create(array $probleminfo): array {
+        $request = new APIRequest(
+            config::DOMAIN . "/api/v2/problems",
+            "POST",
+            ['Content-Type' => 'application/json'],
+            [],
+            $probleminfo
+        );
         return $request->run();
     }
-    
-    public static function get_all(): array {
-    $url = config::DOMAIN . "/api/v2/problems";
-    return (new self($url, "GET", ['Accept' => 'application/json']))->run();
-}
-
 }

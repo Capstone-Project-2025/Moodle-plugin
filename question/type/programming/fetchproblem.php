@@ -3,45 +3,37 @@ require_once('../../../config.php');
 require_login();
 header('Content-Type: application/json');
 
-$problemcode = required_param('code', PARAM_TEXT);
-
-$apiurl = 'http://139.59.105.152';
-$username = 'admin';
-$password = 'admin';
-
-// Authentification
-$curl = curl_init("$apiurl/api/token/");
-curl_setopt_array($curl, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST => true,
-    CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-    CURLOPT_POSTFIELDS => json_encode(['username' => $username, 'password' => $password])
-]);
-$response = curl_exec($curl);
-$data = json_decode($response, true);
-$token = $data['access'] ?? null;
-curl_close($curl);
-
-if (!$token) {
-    echo json_encode(['error' => 'Token missing']);
+// Make sure the request is GET
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    http_response_code(405);
+    echo json_encode(['error' => 'Invalid request method.']);
     exit;
 }
 
-// Appel API de détail du problème
-$curl = curl_init("$apiurl/api/v2/problem/$problemcode");
-curl_setopt_array($curl, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token]
-]);
-$response = curl_exec($curl);
-curl_close($curl);
+// Retrieve the problem code from the URL parameters
+$code = required_param('code', PARAM_TEXT);
 
-$data = json_decode($response, true);
-$object = $data['data']['object'] ?? [];
+global $DB;
 
+// Try to fetch the corresponding problem from the database
+$record = $DB->get_record(
+    'local_programming_problem',
+    ['code' => $code],
+    'id, code, name, description',
+    IGNORE_MISSING
+);
+
+// If not found, return an error message
+if (!$record) {
+    http_response_code(404);
+    echo json_encode(['error' => 'Problem not found']);
+    exit;
+}
+
+// Return the problem data as JSON
 echo json_encode([
-    'name' => $object['name'] ?? '',
-    'code' => $object['code'] ?? '',
-    'description' => $object['description'] ?? ''
+    'id' => $record->id,
+    'code' => $record->code,
+    'name' => $record->name,
+    'description' => $record->description
 ]);
-

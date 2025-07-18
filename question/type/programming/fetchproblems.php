@@ -3,50 +3,32 @@ require_once('../../../config.php');
 require_login();
 header('Content-Type: application/json');
 
-$apiurl = 'http://139.59.105.152';
-$username = 'admin';
-$password = 'admin';
-
-// Authentification
-$curl = curl_init("$apiurl/api/token/");
-curl_setopt_array($curl, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST => true,
-    CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-    CURLOPT_POSTFIELDS => json_encode(['username' => $username, 'password' => $password])
-]);
-$response = curl_exec($curl);
-$data = json_decode($response, true);
-$token = $data['access'] ?? null;
-curl_close($curl);
-
-if (!$token) {
-    echo json_encode(['error' => 'Token missing']);
+// Ensure the request method is GET
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    http_response_code(405); // Method Not Allowed
+    echo json_encode(['error' => 'Invalid request method.']);
     exit;
 }
 
-// Récupération des problèmes
-$curl = curl_init("$apiurl/api/v2/problems");
-curl_setopt_array($curl, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_HTTPHEADER => ["Authorization: Bearer $token"]
-]);
-$response = curl_exec($curl);
-curl_close($curl);
+global $DB;
 
-// 🔄 Correction ici :
-$data = json_decode($response, true);
+// Fetch all problems from the database, ordered by name
+$records = $DB->get_records(
+    'local_programming_problem',
+    null,
+    'name ASC',
+    'code, name, description'
+);
+
+// Transform the records into a JSON-serializable array
 $problems = [];
-
-foreach ($data['data']['objects'] ?? [] as $problem) {
-    if (isset($problem['name'], $problem['code'])) {
-        $problems[] = [
-            'name' => $problem['name'],
-            'code' => $problem['code'],
-            'description' => $problem['description'] ?? ''
-        ];
-    }
+foreach ($records as $record) {
+    $problems[] = [
+        'code' => $record->code,
+        'name' => $record->name,
+        'description' => $record->description
+    ];
 }
 
+// Return the list of problems as JSON
 echo json_encode($problems);
-

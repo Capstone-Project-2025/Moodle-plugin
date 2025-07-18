@@ -1,66 +1,114 @@
 <?php
 require_once(__DIR__ . '/../../../../config.php');
-require_login();
+require_once($CFG->dirroot . '/local/programming/classes/api/ProblemSubmission.php');
+
+use local_programming\api\ProblemSubmission;
+
 header('Content-Type: application/json');
 
-// Lecture de la requête JSON envoyée par JavaScript
+// 🔐 User security check
+if (!isloggedin() || isguestuser()) {
+    http_response_code(403);
+    echo json_encode(['error' => 'Access denied: user not logged in']);
+    exit;
+}
+
+global $DB, $USER;
+
+// 🔄 Read JSON input
 $input = json_decode(file_get_contents('php://input'), true);
-$code = $input['code'] ?? '';
+if (!$input) {
+    echo json_encode(['error' => 'Invalid JSON input']);
+    exit;
+}
+
+// 🔑 Validate session key
+$sesskey = $input['sesskey'] ?? '';
+if (!confirm_sesskey($sesskey)) {
+    echo json_encode(['error' => 'Invalid sesskey']);
+    exit;
+}
+
+// 📦 Extract input values
+$code        = $input['code'] ?? '';
 $problemcode = $input['problemcode'] ?? '';
+$languageId  = $input['language'] ?? 1;
+$attemptid   = isset($input['attemptid']) ? (int)$input['attemptid'] : null;
+$questionid  = isset($input['questionid']) ? (int)$input['questionid'] : null;
+$userid      = (int)$USER->id;
 
-// Vérification des paramètres requis
+// 📘 Get course ID from quiz attempt (if available)
+$courseid = null;
+if ($attemptid) {
+    $sql = "
+        SELECT c.id AS courseid
+        FROM {quiz_attempts} qza
+        JOIN {quiz} qz ON qz.id = qza.quiz
+        JOIN {course} c ON c.id = qz.course
+        WHERE qza.id = :attemptid
+        LIMIT 1
+    ";
+    $record = $DB->get_record_sql($sql, ['attemptid' => $attemptid]);
+    $courseid = $record->courseid ?? null;
+}
 
-// === Configuration de l'API DMOJ ===
-$apiurl = 'http://139.59.105.152'; // Remplace si besoin
-$username = 'admin';
-$password = 'admin';
+// 🚫 Required field validation
+if (!$questionid) {
+    echo json_encode(['error' => 'Missing question ID']);
+    exit;
+}
+if (!$problemcode) {
+    echo json_encode(['error' => 'Missing problem code']);
+    exit;
+}
 
-// === Étape 1 : Authentification pour obtenir le token ===
-$curl = curl_init("$apiurl/api/token/");
-curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($curl, CURLOPT_POST, true);
-curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode([
-    'username' => $username,
-    'password' => $password
-]));
-$response = curl_exec($curl);
-curl_close($curl);
+// 📨 Submit the code to external API using your class
+try {
+    $submissionApi = new ProblemSubmission('', '');
+    $submitResponse = $submissionApi->submit($problemcode, $code, $languageId);
+} catch (Exception $e) {
+    echo json_encode(['error' => 'API submission failed: ' . $e->getMessage()]);
+    exit;
+}
 
-$data = json_decode($response, true);
-$token = $data['access'] ?? null;
+// 📥 Handle API response
+$submission_id = $submitResponse['body']['submission_id'] ?? null;
 
-// === Étape 2 : Soumettre le code à l'API ===
-$curl = curl_init("$apiurl/api/v2/problem/$problemcode/submit");
-curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($curl, CURLOPT_POST, true);
-curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-curl_setopt($curl, CURLOPT_HTTPHEADER, [
-    'Content-Type: application/json',
-    "Authorization: Bearer $token"
-]);
+if (!$submission_id) {
+    echo json_encode(['error' => 'API did not return a submission ID']);
+    exit;
+}
 
-$languageId = $input['language'] ?? 1;
+$result       = $submitResponse['body']['result'] ?? 'pending';
+$points       = $submitResponse['body']['case_points'] ?? 0;
+$total_point  = $submitResponse['body']['case_total'] ?? 0;
+$source_code  = $submitResponse['body']['source_code'] ?? '';
 
-curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode([
-    'source' => $code ?: "print(123)",  // fallback au cas où vide
-    'language' => $languageId,                   // à corriger si invalide
-    'judge' => ''                       // vide pour auto
-]));
+if ($result === null) {
+    $result = 'pending';
+}
 
+// 💾 Insert submission into Moodle database
+$questionrecord = $DB->get_record('qtype_programming_options', ['id' => $questionid]);
+if ($questionrecord) {
+    try {
+        $DB->execute(
+            "INSERT INTO {qtype_programming_submission}
+            (submission_id, question_id, user_id, result, point, total_point, language_id, course_id, code)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$submission_id, $questionid, $userid, $result, $points, $total_point, $languageId, $courseid, $source_code]
+        );
+    } catch (dml_exception $e) {
+        error_log('⚠️ INSERT failed: ' . $e->getMessage());
+    }
+} else {
+    echo json_encode(['error' => 'Question configuration not found']);
+    exit;
+}
 
-$response = curl_exec($curl);
-curl_close($curl);
-
-
-
-// === Réponse de l'API ===
-$submitResponse = json_decode($response, true);
-
-// === Retour vers le navigateur (frontend JS) ===
+// ✅ Final JSON response
 echo json_encode([
-    'submission_id' => $submitResponse['submission_id'] ?? null,
-    'error' => $submitResponse['error'] ?? null,
-    'raw_response' => $submitResponse // tableau, pas chaîne JSON
+    'submission_id' => $submission_id,
+    'raw_response' => $submitResponse
 ]);
-
+exit;

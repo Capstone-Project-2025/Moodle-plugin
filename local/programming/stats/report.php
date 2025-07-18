@@ -2,10 +2,6 @@
 
 require('../../../config.php');
 
-use local_programming\api\ProblemDetail;
-use local_programming\api\ProblemSubmission;
-use local_programming\api\ProblemList;
-
 $courseid = required_param('id', PARAM_INT);
 require_login($courseid);
 
@@ -23,66 +19,69 @@ echo $OUTPUT->heading('Programming statistics for this course');
 
 global $DB, $USER;
 
+// ✅ Total des submissions pour l’utilisateur
 $submissions = $DB->get_records('qtype_programming_submission', ['user_id' => $USER->id]);
 $totalsub = count($submissions);
 echo $OUTPUT->heading("Total number of submissions : $totalsub");
 
+// 🔗 Lien vers la page de soumissions
 $submissionviewurl = new moodle_url('/local/programming/stats/view_submission.php', ['id' => $courseid]);
-echo html_writer::link(
-    $submissionviewurl,
-    '🔍 View submissions',
-    ['class' => 'btn btn-primary', 'style' => 'margin: 10px 0; display: inline-block;']
-);
+echo html_writer::link($submissionviewurl, '🔍 View submissions', ['class' => 'btn btn-primary', 'style' => 'margin: 10px 0; display: inline-block;']);
+
+// ✅ Requête SQL regroupée par type
+$sql = "
+    SELECT 
+        t.name AS type_name,
+        COUNT(*) AS total_submissions,
+        SUM(CASE WHEN s.result = 'AC' THEN 1 ELSE 0 END) AS AC_count,
+        SUM(CASE WHEN s.result != 'AC' AND s.result != 'pending' THEN 1 ELSE 0 END) AS Other_count
+    FROM {qtype_programming_submission} s
+    JOIN {qtype_programming_options} o ON s.question_id = o.id
+    JOIN {local_programming_problem_type} pt ON o.problem_id = pt.problem_id
+    JOIN {local_programming_type} t ON pt.type_id = t.id
+    WHERE s.user_id = :userid
+    GROUP BY t.name
+    ORDER BY t.name
+";
+$params = ['userid' => $USER->id];
+$typestats = $DB->get_records_sql($sql, $params);
+
+// ✅ Affichage du tableau HTML
+echo html_writer::start_tag('table', ['class' => 'generaltable', 'style' => 'margin-top: 20px;']);
+echo html_writer::start_tag('thead');
+echo html_writer::start_tag('tr');
+echo html_writer::tag('th', 'Type');
+echo html_writer::tag('th', 'Total Submissions');
+echo html_writer::tag('th', 'Accepted (AC)');
+echo html_writer::tag('th', 'Other');
+echo html_writer::end_tag('tr');
+echo html_writer::end_tag('thead');
+echo html_writer::start_tag('tbody');
 
 $typeStatusMap = [];
-$submissiondates = [];
-
-
-
-foreach ($submissions as $submission) {
-    $submissionid = $submission->submission_id;
-
-    $subresponse = ProblemSubmission::get_by_id($submissionid);
-    $subdata = json_decode($subresponse['body'], true);
-    $submissionobj = $subdata['data']['object'] ?? null;
-    if (!$submissionobj) continue;
-
-    $status = $submissionobj['result'] ?? 'Unknown';
-    $problemcode = $submissionobj['problem'] ?? null;
-
-    // Date de soumission
-    $dateStr = $submissionobj['date'] ?? null;
-    if ($dateStr) {
-        try {
-            $date = DateTime::createFromFormat("Y-m-d\TH:i:s.uP", $dateStr) ?: DateTime::createFromFormat(DateTime::ATOM, $dateStr);
-            if ($date) {
-                $day = $date->format('Y-m-d');
-                $submissiondates[$day] = ($submissiondates[$day] ?? 0) + 1;
-            }
-        } catch (Exception $e) {
-            debugging("Erreur de date : " . $e->getMessage());
-        }
-    }
-
-    if (!$problemcode) continue;
-
-    $probresponse = ProblemDetail::get_by_code($problemcode);
-    $probdata = json_decode($probresponse['body'], true);
-    $type = $probdata['data']['object']['types'][0] ?? '(No type)';
-
-    $category = ($status === 'AC') ? 'AC' : 'Other';
-
-    if (!isset($typeStatusMap[$type])) {
-        $typeStatusMap[$type] = ['AC' => 0, 'Other' => 0];
-    }
-    $typeStatusMap[$type][$category]++;
-}
-
-// Préparation des données de graphique
 $labels = [];
 $acceptedData = [];
 $otherData = [];
 
+foreach ($typestats as $stat) {
+    echo html_writer::start_tag('tr');
+    echo html_writer::tag('td', $stat->type_name);
+    echo html_writer::tag('td', $stat->total_submissions);
+    echo html_writer::tag('td', $stat->ac_count);
+    echo html_writer::tag('td', $stat->other_count);
+    echo html_writer::end_tag('tr');
+
+    // Préparation des données pour le graphique
+    $typeStatusMap[$stat->type_name] = [
+        'AC' => $stat->ac_count,
+        'Other' => $stat->other_count
+    ];
+}
+
+echo html_writer::end_tag('tbody');
+echo html_writer::end_tag('table');
+
+// ✅ Construction des labels et datasets pour Chart.js
 foreach ($typeStatusMap as $type => $counts) {
     $ac = $counts['AC'];
     $other = $counts['Other'];
@@ -94,44 +93,13 @@ foreach ($typeStatusMap as $type => $counts) {
     $otherData[] = $other;
 }
 
-// Identifier les types avec les taux les plus faibles
-$typeSuccessRates = [];
-foreach ($typeStatusMap as $type => $counts) {
-    $ac = $counts['AC'];
-    $total = $ac + $counts['Other'];
-    $rate = ($total > 0) ? ($ac / $total) : 0;
-    $typeSuccessRates[$type] = $rate;
+// ✅ Calcul des dates pour heatmap
+$submissiondates = [];
+foreach ($submissions as $submission) {
+    $timestamp = $submission->timecreated ?? time();
+    $date = (new DateTime())->setTimestamp($timestamp)->format('Y-m-d');
+    $submissiondates[$date] = ($submissiondates[$date] ?? 0) + 1;
 }
-
-asort($typeSuccessRates);
-$lowestTypes = array_slice(array_keys($typeSuccessRates), 0, 3);
-
-$problemsToRecommend = [];
-
-foreach ($lowestTypes as $type) {
-    $cache = cache::make('local_programming', 'problemtype');
-    $safe_type_key = preg_replace('/[^a-zA-Z0-9_]/', '_', $type);
-    $cached = $cache->get($safe_type_key);
-
-    if ($cached !== false) {
-        $problems = $cached;
-    } else {
-        $response = ProblemList::get_by_type($type);
-        $data = json_decode($response['body'], true);
-        $problems = $data['data']['objects'] ?? [];
-        $cache->set($safe_type_key, $problems);
-    }
-
-    if (!empty($problems)) {
-        $randomIndex = array_rand($problems);
-        $problemsToRecommend[] = $problems[$randomIndex];
-    }
-}
-
-// Affichage du graphique
-echo '<canvas id="typeStatusChart" width="800" height="' . (count($labels) * 40) . '"></canvas>';
-
-// Données pour Cal-Heatmap
 $heatmapdata = [];
 foreach ($submissiondates as $date => $count) {
     $datetime = new DateTime($date, new DateTimeZone('UTC'));
@@ -140,23 +108,72 @@ foreach ($submissiondates as $date => $count) {
     $heatmapdata[$timestamp] = $count;
 }
 
-// Affichage des recommandations
+// ✅ Graphique Chart.js
+echo '<canvas id="typeStatusChart" width="800" height="' . (count($labels) * 40) . '"></canvas>';
+
+// ✅ Recommandations basées sur les types les moins réussis
+$typeSuccessRates = [];
+foreach ($typeStatusMap as $type => $counts) {
+    $ac = $counts['AC'];
+    $total = $ac + $counts['Other'];
+    $rate = ($total > 0) ? ($ac / $total) : 0;
+    $typeSuccessRates[$type] = $rate;
+}
+asort($typeSuccessRates);
+$lowestTypes = array_slice(array_keys($typeSuccessRates), 0, 3);
+
 echo $OUTPUT->heading('🧠 Recommendations based on your challenges');
 
-foreach ($problemsToRecommend as $problem) {
-    $code = $problem['code'] ?? 'N/A';
-    $name = $problem['name'] ?? 'Unnamed Problem';
-    $description = $problem['description'] ?? '';
-    $type = implode(', ', $problem['types'] ?? []);
+foreach ($lowestTypes as $typename) {
+    $sql = "SELECT id FROM {local_programming_type} WHERE " . $DB->sql_compare_text('name') . " = " . $DB->sql_compare_text(':name');
+    $typeid = $DB->get_field_sql($sql, ['name' => $typename]);
+
+    if (!$typeid) continue;
+
+    $sql = "SELECT DISTINCT pt.problem_id
+            FROM {local_programming_problem_type} pt
+            WHERE pt.type_id = :typeid";
+    $problemids = $DB->get_records_sql($sql, ['typeid' => $typeid]);
+    if (empty($problemids)) continue;
+    $problemidlist = array_keys($problemids);
+
+    list($insql, $inparams) = $DB->get_in_or_equal($problemidlist, SQL_PARAMS_NAMED, 'prob');
+    $inparams['userid'] = $USER->id;
+
+    $sql = "SELECT DISTINCT qo.problem_id
+            FROM {qtype_programming_submission} qs
+            JOIN {qtype_programming_options} qo ON qs.question_id = qo.questionid
+            WHERE qs.user_id = :userid AND qs.result = 'AC' AND qo.problem_id $insql";
+    $solvedproblems = $DB->get_records_sql($sql, $inparams);
+    $solvedids = array_keys($solvedproblems);
+    $unsolved = array_diff($problemidlist, $solvedids);
+    if (empty($unsolved)) continue;
+
+    shuffle($unsolved);
+    $problemid = reset($unsolved);
+
+    $problem = $DB->get_record('local_programming_problem', ['id' => $problemid]);
+    if (!$problem) continue;
+
+    $code = $problem->code ?? 'N/A';
+    $name = $problem->name ?? 'Unnamed Problem';
+
+    $typerecords = $DB->get_records('local_programming_problem_type', ['problem_id' => $problemid]);
+    $typenames = [];
+    foreach ($typerecords as $trecord) {
+        $tname = $DB->get_field('local_programming_type', 'name', ['id' => $trecord->type_id]);
+        if ($tname) $typenames[] = $tname;
+    }
+
+    $typeString = implode(', ', $typenames);
 
     echo html_writer::start_div('card', ['style' => 'margin:10px; padding:10px; border:1px solid #ccc;']);
     echo html_writer::tag('h4', $name);
-    echo html_writer::tag('p', "<strong>Type :</strong> $type<br><strong>Code :</strong> $code");
-    echo html_writer::tag('p', $description);
+    echo html_writer::tag('p', "<strong>Type :</strong> $typeString<br><strong>Code :</strong> $code");
     echo html_writer::end_div();
 }
 
-// JS/CSS pour les graphiques
+// ✅ Assets Chart.js et CalHeatMap
 echo '<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>';
 echo '<link href="https://cdn.jsdelivr.net/npm/cal-heatmap@3.6.3/cal-heatmap.css" rel="stylesheet">';
 echo '<script src="https://cdn.jsdelivr.net/npm/cal-heatmap@3.6.3/cal-heatmap.min.js"></script>';
@@ -185,14 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
             indexAxis: 'y',
             responsive: true,
             plugins: {
-                legend: { position: 'top' },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + context.raw;
-                        }
-                    }
-                }
+                legend: { position: 'top' }
             },
             scales: {
                 x: { stacked: true, beginAtZero: true },

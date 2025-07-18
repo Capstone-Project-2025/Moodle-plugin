@@ -7,7 +7,7 @@ class OrganizationList extends APIRequest {
 
     /**
      * GET /api/v2/organizations
-     * Récupère la liste des organisations
+     * Retrieves the list of organizations.
      */
     public function get($params = []) {
         $this->url = config::DOMAIN . "/api/v2/organizations";
@@ -20,7 +20,7 @@ class OrganizationList extends APIRequest {
 
     /**
      * POST /api/v2/organizations
-     * Crée une organisation (si l'utilisateur a la permission)
+     * Creates a new organization (if the user has permission).
      */
     public function create(array $orgdata) {
         $this->url = config::DOMAIN . "/api/v2/organizations";

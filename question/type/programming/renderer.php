@@ -1,227 +1,177 @@
-<?php
+<?php 
 defined('MOODLE_INTERNAL') || die();
 
 class qtype_programming_renderer extends qtype_renderer {
 
-    private function fetch_problem_data($problemcode) {
-        $apiurl = 'http://139.59.105.152';
-        $username = 'admin';
-        $password = 'admin';
-
-        $curl = curl_init("$apiurl/api/token/");
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode([
-            'username' => $username,
-            'password' => $password
-        ]));
-        $response = curl_exec($curl);
-        curl_close($curl);
-        $data = json_decode($response, true);
-        $token = $data['access'] ?? null;
-
-        if (!$token) {
-            return null;
-        }
-
-        $curl = curl_init("$apiurl/api/v2/problem/$problemcode");
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, [
-            "Authorization: Bearer $token"
-        ]);
-        $response = curl_exec($curl);
-        curl_close($curl);
-
-        $problem = json_decode($response, true);
-        return $problem['data']['object'] ?? null;
-    }
-
     public function formulation_and_controls(question_attempt $qa, question_display_options $options) {
-        static $alreadydisplayed = false;
+        global $DB, $PAGE;
 
         $question = $qa->get_question();
-        $codeOfProblem = $question->problemcode ?? '';
         $response = $qa->get_last_qt_data();
         $answer = $response['answer'] ?? '';
+        $questionid = $question->id;
 
-        $output = '';
+        // 📦 Retrieve settings for the programming question
+        $questionProgramming = $DB->get_record('qtype_programming_options', ['questionid' => $questionid]);
+        $problemid = $questionProgramming->problem_id ?? null;
 
-        if (!$alreadydisplayed && !empty($codeOfProblem)) {
-            $apidata = $this->fetch_problem_data($codeOfProblem);
-            $name = $apidata['name'] ?? '(no name)';
-            $description = $apidata['description'] ?? '(no description)';
+        $problemcode = '(no code)';
+        $name = '(no name)';
+        $description = '(no description)';
 
-            $output .= html_writer::div(
-                "<h3>Programming Problem</h3>" .
-                "<strong>Code:</strong> " . s($codeOfProblem) . "<br>" .
-                "<strong>Name:</strong> " . s($name) . "<br><br>" .
-                "<strong>Description:</strong><br>" .
-                format_text($description, FORMAT_MARKDOWN),
-                'global-problem-info',
-                ['style' => 'border: 2px solid blue; padding: 10px; margin-bottom: 20px; background: #eef;']
+        if ($problemid) {
+            $problem = $DB->get_record(
+                'local_programming_problem',
+                ['id' => $problemid],
+                'id, code, name, description',
+                IGNORE_MISSING
             );
 
-            $alreadydisplayed = true;
+            if ($problem) {
+                $problemcode = $problem->code;
+                $name = $problem->name;
+                $description = $problem->description;
+            }
         }
 
         $inputname = $qa->get_qt_field_name('answer');
-        $langs = [
-            3 => 'AWK', 17 => 'Brain****', 4 => 'C', 16 => 'C11', 5 => 'C++03',
-            6 => 'C++11', 13 => 'C++14', 15 => 'C++17', 18 => 'C++20',
-            11 => 'Assembly (x86)', 2 => 'Assembly (x64)', 9 => 'Java 8',
-            14 => 'Pascal', 7 => 'Perl', 1 => 'Python 2', 8 => 'Python 3',
-            12 => 'Sed', 10 => 'Text'
-        ];
 
-        $selectid = 'language_select_' . $qa->get_slot();
-        $themebtnid = 'theme_toggle_' . $qa->get_slot();
-        $output .= html_writer::tag('button', 'Switch Theme', [
-            'type' => 'button',
-            'id' => $themebtnid,
-            'style' => 'margin: 10px 5px; background-color: #ccc; padding: 5px 10px; font-weight: bold;'
-        ]);
-        $submitbuttonid = 'submitbtn_' . $qa->get_slot();
-        $problemcode = $question->problemcode;
-        $submiturl = (new moodle_url('/question/type/programming/submission/submit.php'))->out(false);
-        $getsubmissionurl = (new moodle_url('/question/type/programming/submission/getsubmission.php'))->out(false);
+        // 🔁 Retrieve allowed programming languages for this problem
+        $languages = [];
+        if ($problemid) {
+            $sql = "SELECT l.language_id, l.name
+                    FROM {local_programming_language} l
+                    JOIN {local_programming_problem_language} pl ON pl.language_id = l.language_id
+                    WHERE pl.problem_id = :problemid
+                    ORDER BY l.name ASC";
 
-        $output .= html_writer::tag('textarea', s($answer), [
-            'name' => $inputname,
-            'id' => $inputname,
-            'rows' => 10,
-            'cols' => 80,
-            'style' => 'width: 100%; margin-top: 15px;',
-        ]);
+            $languages = $DB->get_records_sql_menu($sql, ['problemid' => $problemid]);
 
-        $output .= html_writer::start_tag('label', ['for' => $selectid]) . 'Choose language:' . html_writer::end_tag('label');
-        $output .= html_writer::start_tag('select', ['id' => $selectid, 'style' => 'margin-top: 10px; margin-bottom: 10px;']);
-        foreach ($langs as $id => $name) {
-            $output .= html_writer::tag('option', $name, ['value' => $id]);
+            // Format languages for template rendering
+            $languages = array_map(function($id, $name) {
+                return ['id' => $id, 'name' => $name];
+            }, array_keys($languages), $languages);
         }
-        $output .= html_writer::end_tag('select');
 
-        $output .= html_writer::empty_tag('br');
-        $output .= html_writer::tag('button', 'Submit', [
-            'type' => 'button',
-            'id' => $submitbuttonid,
-            'style' => 'margin-top: 10px; background-color: yellow; padding: 5px 10px; font-weight: bold;',
-        ]);
-        $output .= html_writer::div('', 'submission-result', ['id' => 'submission_result_' . $qa->get_slot(), 'style' => 'margin-top: 10px;']);
+        // 🧩 UI element IDs
+        $slot = $qa->get_slot();
+        $selectid = 'language_select_' . $slot;
+        $themebtnid = 'theme_toggle_' . $slot;
+        $submitbuttonid = 'submitbtn_' . $slot;
+        $editorid = 'code_editor_' . $slot;
+        $resultcontainerid = 'submission_result_' . $slot;
 
-        // CodeMirror + JS
-        $output .= '
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/meta.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+        // 🌐 URLs
+        $submiturl = new moodle_url('/question/type/programming/submission/submit.php');
+        $getsubmissionurl = new moodle_url('/question/type/programming/submission/getsubmission.php');
+        $getsubmissionListUrl = new moodle_url('/question/type/programming/submission/getsubmissionslist.php');
 
+        // 📘 Get course info based on attempt
+        $attemptid = required_param('attempt', PARAM_INT);
 
+        $sql = "
+            SELECT qa.questionid, c.id AS courseid, c.fullname
+            FROM {quiz_attempts} qza
+            JOIN {question_attempts} qa ON qa.questionusageid = qza.uniqueid
+            JOIN {quiz} qz ON qz.id = qza.quiz
+            JOIN {course} c ON c.id = qz.course
+            WHERE qza.id = :attemptid
+            LIMIT 1
+        ";
+
+        $params = ['attemptid' => $attemptid];
+        $record = $DB->get_record_sql($sql, $params);
+
+        // 💡 Load CodeMirror only once
+        if (!defined('QTYPE_PROGRAMMING_CODEMIRROR_LOADED')) {
+            define('QTYPE_PROGRAMMING_CODEMIRROR_LOADED', true);
+
+            $output = '
 <script>
-const editor = CodeMirror.fromTextArea(document.getElementById("' . $inputname . '"), {
-    lineNumbers: true,
-    mode: "python", // valeur par défaut
-    theme: "material-darker",
-    indentUnit: 4,
-    tabSize: 4,
-    indentWithTabs: false
-});
+document.addEventListener("DOMContentLoaded", function () {
+    const editorElement = document.getElementById("' . $editorid . '");
+    if (!editorElement || typeof CodeMirror === "undefined") return;
 
-let currentTheme = "material-darker";
+    const langMap = {
+        1: "python", 8: "python",
+        4: "text/x-csrc",
+        5: "text/x-c++src", 6: "text/x-c++src", 13: "text/x-c++src", 15: "text/x-c++src", 18: "text/x-c++src",
+        9: "text/x-java",
+        10: "text/plain"
+    };
 
-const themeBtn = document.getElementById("' . $themebtnid . '");
-themeBtn.addEventListener("click", function () {
-    currentTheme = currentTheme === "material-darker" ? "default" : "material-darker";
-    editor.setOption("theme", currentTheme);
-});
-
-const langMap = {
-    1: "python", 8: "python",
-    4: "text/x-csrc",
-    5: "text/x-c++src", 6: "text/x-c++src", 13: "text/x-c++src", 15: "text/x-c++src", 18: "text/x-c++src",
-    9: "text/x-java",
-    10: "text/plain"
-};
-
-const langSelect = document.getElementById("' . $selectid . '");
-langSelect.addEventListener("change", function () {
-    const selectedLang = parseInt(langSelect.value);
-    const mode = langMap[selectedLang] || "text/plain";
-    editor.setOption("mode", mode);
-});
-
-document.getElementById("' . $submitbuttonid . '").addEventListener("click", function () {
-    const code = editor.getValue();
-    const languageId = parseInt(langSelect.value);
-    const resultDiv = document.getElementById("submission_result_' . $qa->get_slot() . '");
-    resultDiv.innerHTML = "Submitting...";
-
-    fetch("' . $submiturl . '", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            code: code,
-            problemcode: "' . $problemcode . '",
-            language: languageId
-        })
-    })
-    .then(response => response.text())
-    .then(text => {
-        try {
-            const data = JSON.parse(text);
-            if (data.submission_id) {
-                resultDiv.innerHTML = "<strong>Submission ID:</strong> " + data.submission_id + "<br>Checking result...";
-                fetch("' . $getsubmissionurl . '", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ submission_id: data.submission_id })
-                })
-                .then(resp => resp.json())
-                .then(res => {
-                    let explanation = "";
-                    if (res.status === "AC") {
-                        explanation = "<span style=\'color:green; font-weight:bold;\'>✅ Accepted</span><br>Your solution is correct.";
-                    } else if (res.status === "CE") {
-                        explanation = "<span style=\'color:red; font-weight:bold;\'>❌ Compilation Error</span><br>Your code failed to compile.";
-                    } else if (res.status === "TLE") {
-                        explanation = "<span style=\'color:orange; font-weight:bold;\'>⏱️ Time Limit Exceeded</span><br>Your code took too long to run.";
-                    } else if (res.status === "WA") {
-                        explanation = "<span style=\'color:red; font-weight:bold;\'>❌ Wrong Answer</span><br>Your code gave incorrect output.";
-                    } else if (res.status === "IR") {
-                        explanation = "<span style=\'color:red; font-weight:bold;\'>💥 Internal Error</span><br>Server-side problem during evaluation.";
-                    } else {
-                        explanation = "<span style=\'color:gray;\'>Status: " + res.status + ", Result: " + res.result + "</span>";
-                    }
-
-                    resultDiv.innerHTML += "<br><strong>Language:</strong> " + res.language +
-                                           "<br><strong>Time:</strong> " + (res.time ?? "-") +
-                                           "<br><strong>Memory:</strong> " + (res.memory ?? "-") +
-                                           "<br>" + explanation;
-                })
-                .catch(err => {
-                    resultDiv.innerHTML += "<br><span style=\'color:red;\'>Error fetching result: " + err + "</span>";
-                });
-            } else {
-                resultDiv.innerHTML = "<span style=\\"color:red;\\">Error: " + (data.error || "Unknown error") + "</span>";
-            }
-        } catch (e) {
-            resultDiv.innerHTML = "<span style=\\"color:red;\\">Invalid JSON returned</span>";
-            console.error("JSON parse error:", e);
-        }
-    })
-    .catch(err => {
-        resultDiv.innerHTML = "<span style=\\"color:red;\\">Submission failed: " + err + "</span>";
+    const editor = CodeMirror.fromTextArea(editorElement, {
+        lineNumbers: true,
+        mode: langMap[parseInt(document.getElementById("' . $selectid . '").value, 10)] || "text/plain",
+        theme: "material-darker",
+        indentUnit: 4,
+        tabSize: 4,
+        indentWithTabs: false
     });
-});
-</script>';
 
-        return $output;
+    window["codemirrorEditor_' . $slot . '"] = editor;
+
+    let currentTheme = "material-darker";
+    const themeBtn = document.getElementById("' . $themebtnid . '");
+    if (themeBtn) {
+        themeBtn.addEventListener("click", function () {
+            currentTheme = currentTheme === "material-darker" ? "eclipse" : "material-darker";
+            editor.setOption("theme", currentTheme);
+        });
+    }
+
+    const select = document.getElementById("' . $selectid . '");
+    if (select) {
+        select.addEventListener("change", function () {
+            const selected = parseInt(this.value, 10);
+            const mode = langMap[selected] || "text/plain";
+            editor.setOption("mode", mode);
+        });
+    }
+});
+</script>
+';
+        } else {
+            $output = '';
+        }
+
+        // 📦 Load JavaScript for submission handler
+        $PAGE->requires->js_call_amd('qtype_programming/submission', 'init', [[
+            'inputId' => $editorid,
+            'selectId' => $selectid,
+            'submitButtonId' => $submitbuttonid,
+            'themeButtonId' => $themebtnid,
+            'resultContainerId' => $resultcontainerid,
+            'submitUrl' => $submiturl->out(false),
+            'resultUrl' => $getsubmissionurl->out(false),
+            'submissionListUrl' => $getsubmissionListUrl->out(false),
+            'problemCode' => $problemcode,
+            'sesskey' => sesskey(),
+            'questionId' => $questionProgramming->id,
+            'showSubmissionsButtonId' => 'showsubmissionsbtn_' . $slot,
+            'submissionListContainerId' => 'submissionlist_' . $slot,
+            'submissionIdName' => $qa->get_qt_field_name('submission_id'),
+            'slot' => $slot,
+            'attemptid' => $attemptid,
+        ]]);
+
+        // 🖥️ Render the HTML using the Mustache template
+        return $output . $this->render_from_template('qtype_programming/renderer', [
+            'problemcode' => $problemcode,
+            'name' => $name,
+            'description' => format_text($description, FORMAT_MARKDOWN),
+            'inputname' => $inputname,
+            'editorid' => $editorid,
+            'selectId' => $selectid,
+            'submitButtonId' => $submitbuttonid,
+            'themeButtonId' => $themebtnid,
+            'resultContainerId' => $resultcontainerid,
+            'showSubmissionsButtonId' => 'showsubmissionsbtn_' . $slot,
+            'submissionListContainerId' => 'submissionlist_' . $slot,
+            'answer' => $answer,
+            'languages' => $languages,
+            'submissionidname' => $qa->get_qt_field_name('submission_id'),
+            'submissionid' => $response['submission_id'] ?? ''
+        ]);
     }
 }
