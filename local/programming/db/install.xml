@@ -6,12 +6,10 @@
     <TABLE NAME="local_programming_language" COMMENT="Available programming languages">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="language_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="name" TYPE="text" NOTNULL="true"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="uniq_languageid" TYPE="unique" FIELDS="language_id"/>
       </KEYS>
     </TABLE>
 
@@ -49,46 +47,44 @@
       </KEYS>
     </TABLE>
 
+    <!-- Problem types table -->
+    <TABLE NAME="local_programming_type" COMMENT="List of programming problem types">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="text" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <!-- Problem <-> Type relationship table -->
+    <TABLE NAME="local_programming_problem_type" COMMENT="Link between problems and types">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="problem_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="type_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="uniq_pair" TYPE="unique" FIELDS="problem_id,type_id"/>
+        <KEY NAME="fk_problem" TYPE="foreign" FIELDS="problem_id" REFTABLE="local_programming_problem" REFFIELDS="id"/>
+        <KEY NAME="fk_type" TYPE="foreign" FIELDS="type_id" REFTABLE="local_programming_type" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <!-- Test cases table -->
+    <TABLE NAME="local_programming_testcase" COMMENT="Test cases for programming problems">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="problem_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="points" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_problem" TYPE="foreign" FIELDS="problem_id" REFTABLE="local_programming_problem" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
   </TABLES>
 </XMLDB>
-
-<!-- Problem types table -->
-<TABLE NAME="local_programming_type" COMMENT="List of programming problem types">
-  <FIELDS>
-    <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-    <FIELD NAME="type_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
-    <FIELD NAME="name" TYPE="text" NOTNULL="true"/>
-  </FIELDS>
-  <KEYS>
-    <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-    <KEY NAME="uniq_typeid" TYPE="unique" FIELDS="type_id"/>
-  </KEYS>
-</TABLE>
-
-<!-- Problem <-> Type relationship table -->
-<TABLE NAME="local_programming_problem_type" COMMENT="Link between problems and types">
-  <FIELDS>
-    <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-    <FIELD NAME="problem_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
-    <FIELD NAME="type_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
-  </FIELDS>
-  <KEYS>
-    <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-    <KEY NAME="uniq_pair" TYPE="unique" FIELDS="problem_id,type_id"/>
-    <KEY NAME="fk_problem" TYPE="foreign" FIELDS="problem_id" REFTABLE="local_programming_problem" REFFIELDS="id"/>
-    <KEY NAME="fk_type" TYPE="foreign" FIELDS="type_id" REFTABLE="local_programming_type" REFFIELDS="id"/>
-  </KEYS>
-</TABLE>
-
-
-<TABLE NAME="local_programming_testcase" COMMENT="Test cases for programming problems">
-  <FIELDS>
-    <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-    <FIELD NAME="problem_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
-    <FIELD NAME="points" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
-  </FIELDS>
-  <KEYS>
-    <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-    <KEY NAME="fk_problem" TYPE="foreign" FIELDS="problem_id" REFTABLE="local_programming_problem" REFFIELDS="id"/>
-  </KEYS>
-</TABLE>
