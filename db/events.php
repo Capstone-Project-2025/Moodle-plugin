@@ -3,11 +3,20 @@ defined('MOODLE_INTERNAL') || die();
 
 $observers = [
     [
-        'eventname' => '\core\event\user_enrolment_created',
-        'callback'  => 'mod_dmojorganize_observer::user_enrolment_created',
-        'includefile' => '/mod/dmojorganize/classes/observer.php',
-        'priority'  => 9999,
-        'internal'  => false,
+        'eventname' => '\core\event\user_created',
+        'callback'  => 'mod_dmojorganize_observer::user_enrolment_created'
+    ],
+    [
+        'eventname' => '\core\event\course_created',
+        'callback'  => 'mod_dmojorganize_observer::course_created'
+    ],
+    [
+        'eventname' => '\core\event\course_updated',
+        'callback'  => 'mod_dmojorganize_observer::course_updated'
+    ],
+    [
+        'eventname' => '\core\event\course_deleted',
+        'callback'  => 'mod_dmojorganize_observer::course_deleted'
     ],
 ];
 ?>

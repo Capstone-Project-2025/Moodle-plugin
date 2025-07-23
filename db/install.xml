@@ -4,7 +4,7 @@
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
 <TABLES>
-    <TABLE NAME="dmoj_organize" COMMENT="Relationship between Moodle course ID and DMOJ organization ID">
+    <TABLE NAME="dmojorganize" COMMENT="Relationship between Moodle course ID and DMOJ organization ID">
         <FIELDS>
             <FIELD NAME="course_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
             <FIELD NAME="organization_id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>

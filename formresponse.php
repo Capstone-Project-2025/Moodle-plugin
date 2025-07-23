@@ -93,7 +93,7 @@ function find_dmoj_organization_id(int $moodle_course_id){
         die("Connection failed: " . $conn->connect_error);
     }
 
-    $sql = "SELECT * FROM mdl_dmoj_organize WHERE course_id = ?";
+    $sql = "SELECT * FROM mdl_dmojorganize WHERE course_id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $moodle_course_id);
     $stmt->execute();
@@ -167,7 +167,7 @@ function create_organization($apiurl, $token, $courseid){
     /*
     Steps:
     - Create a new organization with the "Create a new organization" POST request
-    - Insert a (course_id, organization_id) pair to local database table mdl_dmoj_organize
+    - Insert a (course_id, organization_id) pair to local database table mdl_dmojorganize
     - Get Moodle user IDs of all participants of this course
     - Call the "fetch dmoj uid with moodle uid" POST request to get the list of DMOJ user_ids and profile_ids of the Moodle users already linked to DMOJ
 
@@ -224,7 +224,7 @@ function create_organization($apiurl, $token, $courseid){
         die("Connection failed: " . $conn->connect_error);
     }
 
-    $stmt = $conn->prepare("INSERT INTO mdl_dmoj_organize (course_id, organization_id) VALUES (?, ?)");
+    $stmt = $conn->prepare("INSERT INTO mdl_dmojorganize (course_id, organization_id) VALUES (?, ?)");
     $stmt->bind_param("ii", $courseid, $latest_organization_ID);
     $stmt->execute();
     $stmt->close();

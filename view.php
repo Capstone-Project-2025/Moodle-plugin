@@ -33,7 +33,7 @@ if ($conn->connect_error) {
 $check_id = $courseid;
 
 // Prepare and run the query
-$sql = "SELECT * FROM mdl_dmoj_organize WHERE course_id = ?";
+$sql = "SELECT * FROM mdl_dmojorganize WHERE course_id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $check_id);
 $stmt->execute();
