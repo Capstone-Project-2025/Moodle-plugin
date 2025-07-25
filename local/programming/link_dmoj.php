@@ -83,7 +83,7 @@ function unlink_dmoj($user_id = null) {
         $allusers = get_all_users();
         $users = [];
         foreach ($allusers as $user) {
-            $users = [$user->id => $user];
+            $users[$user->id] = $user;
         }
     } else {
         $users = [$user_id => $DB->get_record('user', ['id' => $user_id])];

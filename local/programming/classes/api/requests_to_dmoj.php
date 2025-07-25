@@ -21,13 +21,15 @@
  * @copyright  Dinh
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-require_once(__DIR__ . '/APIRequest.php.php');
+require_once(__DIR__ . '/APIRequest.php');
 
-define('DOMAIN', get_config('local_programming', 'dmoj_domain') ?: 'http://example.com');
+function get_dmoj_domain(): string {
+    return get_config('local_programming', 'dmoj_domain') ?: 'http://example.com';
+}
 
 class PrepareDownloadData extends APIRequest {
     public function __construct($payload = []) {
-        $url = DOMAIN . "/api/v2/user/download-data";
+        $url = get_dmoj_domain() . "/api/v2/user/download-data";
         $method = "POST";
         parent::__construct($url, $method, [], [], $payload);
     }
@@ -35,7 +37,7 @@ class PrepareDownloadData extends APIRequest {
 
 class GetDownloadURL extends APIRequest {
     public function __construct() {
-        $url = DOMAIN . "/api/v2/user/download-data";
+        $url = get_dmoj_domain() . "/api/v2/user/download-data";
         $method = "GET";
         parent::__construct($url, $method);
     }
@@ -50,7 +52,7 @@ class FetchZipFile extends APIRequest {
 
 class GetUserDMOJId extends APIRequest {
     public function __construct($ids = []) {
-        $url = DOMAIN . "/api/v2/moodle-to-dmoj/";
+        $url = get_dmoj_domain() . "/api/v2/moodle-to-dmoj/";
         $method = "POST";
         $payload = [ 
             "provider" => "moodle",
@@ -62,7 +64,7 @@ class GetUserDMOJId extends APIRequest {
 
 class ForceCreateDMOJAccount extends APIRequest {
     public function __construct($payload = []) {
-        $url = DOMAIN . "/api/v2/users/create";
+        $url = get_dmoj_domain() . "/api/v2/users/create";
         $method = "POST";
         parent::__construct($url, $method, [], [], $payload);
     }
@@ -70,7 +72,7 @@ class ForceCreateDMOJAccount extends APIRequest {
 
 class DeleteDMOJAccount extends APIRequest {
     public function __construct($params = []) {
-        $url = DOMAIN . "/api/v2/users/create";
+        $url = get_dmoj_domain() . "/api/v2/users/create";
         $method = "DELETE";
         parent::__construct($url, $method, [], $params, []);
     }
