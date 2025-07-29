@@ -1,0 +1,10 @@
+{
+    "name": "moodle-mod_progcontest-progcontestbase",
+    "builds": {
+        "moodle-mod_progcontest-progcontestbase": {
+            "jsfiles": [
+                "progcontestbase.js"
+            ]
+        }
+    }
+}

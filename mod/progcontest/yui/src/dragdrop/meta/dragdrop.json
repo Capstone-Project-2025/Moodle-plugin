@@ -1,0 +1,19 @@
+{
+    "moodle-mod_progcontest-dragdrop": {
+        "requires": [
+            "base",
+            "node",
+            "io",
+            "dom",
+            "dd",
+            "dd-scroll",
+            "moodle-core-dragdrop",
+            "moodle-core-notification",
+            "moodle-mod_progcontest-progcontestbase",
+            "moodle-mod_progcontest-util-base",
+            "moodle-mod_progcontest-util-page",
+            "moodle-mod_progcontest-util-slot",
+            "moodle-course-util"
+        ]
+    }
+}

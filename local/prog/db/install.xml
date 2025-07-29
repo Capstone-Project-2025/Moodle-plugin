@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/prog/db" VERSION="2025061800" COMMENT="Install tables for local_prog plugin" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../lib/xmldb/xmldb.xsd">
+  <TABLES>
+
+    <!-- Programming languages table -->
+    <TABLE NAME="local_prog_language" COMMENT="Available prog languages">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="text" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <!-- Programming problems table -->
+    <TABLE NAME="local_prog_problem" COMMENT="Programming problems created by users">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="code" TYPE="char" LENGTH="100" NOTNULL="true"/>
+        <FIELD NAME="name" TYPE="text" NOTNULL="true"/>
+        <FIELD NAME="description" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="ispublic" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="points" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="difficulty" TYPE="char" LENGTH="10" NOTNULL="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="uniq_code" TYPE="unique" FIELDS="code"/>
+        <KEY NAME="fk_user" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <!-- Problem-language relation table (many-to-many) -->
+    <TABLE NAME="local_prog_problem_language" COMMENT="Link between problems and supported languages">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="problem_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="language_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="uniq_pair" TYPE="unique" FIELDS="problem_id,language_id"/>
+        <KEY NAME="fk_problem" TYPE="foreign" FIELDS="problem_id" REFTABLE="local_prog_problem" REFFIELDS="id"/>
+        <KEY NAME="fk_language" TYPE="foreign" FIELDS="language_id" REFTABLE="local_prog_language" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <!-- Problem types table -->
+    <TABLE NAME="local_prog_type" COMMENT="List of prog problem types">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="text" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <!-- Problem <-> Type relationship table -->
+    <TABLE NAME="local_prog_problem_type" COMMENT="Link between problems and types">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="problem_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="type_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="uniq_pair" TYPE="unique" FIELDS="problem_id,type_id"/>
+        <KEY NAME="fk_problem" TYPE="foreign" FIELDS="problem_id" REFTABLE="local_prog_problem" REFFIELDS="id"/>
+        <KEY NAME="fk_type" TYPE="foreign" FIELDS="type_id" REFTABLE="local_prog_type" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <!-- Test cases table -->
+    <TABLE NAME="local_prog_testcase" COMMENT="Test cases for prog problems">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="problem_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="points" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="fk_problem" TYPE="foreign" FIELDS="problem_id" REFTABLE="local_prog_problem" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+  </TABLES>
+</XMLDB>

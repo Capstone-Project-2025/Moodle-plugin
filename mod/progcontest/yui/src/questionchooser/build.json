@@ -1,0 +1,9 @@
+{
+    "name": "moodle-mod_progcontest-questionchooser",
+    "builds": {
+        "moodle-mod_progcontest-questionchooser": {
+            "jsfiles": ["questionchooser.js"]
+
+        }
+    }
+}

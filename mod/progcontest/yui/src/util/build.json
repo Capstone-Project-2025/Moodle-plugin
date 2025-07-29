@@ -1,0 +1,21 @@
+{
+  "name": "moodle-mod_progcontest-util",
+  "builds": {
+    "moodle-mod_progcontest-util-base": {
+      "jsfiles": [
+        "base.js"
+      ]
+    },
+    "moodle-mod_progcontest-util-slot": {
+      "jsfiles": [
+        "slot.js"
+      ]
+    }
+    ,
+    "moodle-mod_progcontest-util-page": {
+      "jsfiles": [
+        "page.js"
+      ]
+    }
+  }
+}

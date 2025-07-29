@@ -1,0 +1,14 @@
+{
+    "moodle-mod_progcontest-toolboxes": {
+        "requires": [
+            "base",
+            "node",
+            "event",
+            "event-key",
+            "io",
+            "moodle-mod_progcontest-progcontestbase",
+            "moodle-mod_progcontest-util-slot",
+            "moodle-core-notification-ajaxexception"
+        ]
+    }
+}

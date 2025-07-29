@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="WEB_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/delaybetweenattempts/classes" isTestSource="false" packagePrefix="programmingcontestaccess_delaybetweenattempts" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/delaybetweenattempts/tests" isTestSource="true" packagePrefix="programmingcontestaccess_delaybetweenattempts" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/ipaddress/classes" isTestSource="false" packagePrefix="programmingcontestaccess_ipaddress" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/ipaddress/tests" isTestSource="true" packagePrefix="programmingcontestaccess_ipaddress" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/numattempts/classes" isTestSource="false" packagePrefix="programmingcontestaccess_numattempts" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/numattempts/tests" isTestSource="true" packagePrefix="programmingcontestaccess_numattempts" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/offlineattempts/classes" isTestSource="false" packagePrefix="programmingcontestaccess_offlineattempts" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/offlineattempts/tests" isTestSource="true" packagePrefix="programmingcontestaccess_offlineattempts" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/openclosedate/classes" isTestSource="false" packagePrefix="programmingcontestaccess_openclosedate" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/openclosedate/tests" isTestSource="true" packagePrefix="programmingcontestaccess_openclosedate" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/password/classes" isTestSource="false" packagePrefix="programmingcontestaccess_password" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/password/tests" isTestSource="true" packagePrefix="programmingcontestaccess_password" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/seb/classes" isTestSource="false" packagePrefix="programmingcontestaccess_seb" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/seb/tests" isTestSource="true" packagePrefix="programmingcontestaccess_seb" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/securewindow/classes" isTestSource="false" packagePrefix="programmingcontestaccess_securewindow" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/securewindow/tests" isTestSource="true" packagePrefix="programmingcontestaccess_securewindow" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/timelimit/classes" isTestSource="false" packagePrefix="programmingcontestaccess_timelimit" />
+      <sourceFolder url="file://$MODULE_DIR$/accessrule/timelimit/tests" isTestSource="true" packagePrefix="programmingcontestaccess_timelimit" />
+      <sourceFolder url="file://$MODULE_DIR$/classes" isTestSource="false" packagePrefix="mod_programmingcontest" />
+      <sourceFolder url="file://$MODULE_DIR$/report/grading/classes" isTestSource="false" packagePrefix="programmingcontest_grading" />
+      <sourceFolder url="file://$MODULE_DIR$/report/grading/tests" isTestSource="true" packagePrefix="programmingcontest_grading" />
+      <sourceFolder url="file://$MODULE_DIR$/report/overview/classes" isTestSource="false" packagePrefix="programmingcontest_overview" />
+      <sourceFolder url="file://$MODULE_DIR$/report/overview/tests" isTestSource="true" packagePrefix="programmingcontest_overview" />
+      <sourceFolder url="file://$MODULE_DIR$/report/responses/classes" isTestSource="false" packagePrefix="programmingcontest_responses" />
+      <sourceFolder url="file://$MODULE_DIR$/report/responses/tests" isTestSource="true" packagePrefix="programmingcontest_responses" />
+      <sourceFolder url="file://$MODULE_DIR$/report/statistics/classes" isTestSource="false" packagePrefix="programmingcontest_statistics" />
+      <sourceFolder url="file://$MODULE_DIR$/report/statistics/tests" isTestSource="true" packagePrefix="programmingcontest_statistics" />
+      <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" packagePrefix="mod_programmingcontest" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>

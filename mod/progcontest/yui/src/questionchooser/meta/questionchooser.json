@@ -1,0 +1,9 @@
+{
+    "moodle-mod_progcontest-questionchooser": {
+        "requires": [
+            "moodle-core-chooserdialogue",
+            "moodle-mod_progcontest-util",
+            "querystring-parse"
+        ]
+    }
+}

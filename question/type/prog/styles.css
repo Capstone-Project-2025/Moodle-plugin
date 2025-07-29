@@ -1,0 +1,11 @@
+.checkbox-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    margin-bottom: 1em;
+}
+
+.checkbox-grid .fitem {
+    flex: 0 0 30%; /* 3 par ligne, adapte à 20% pour 5 */
+    min-width: 200px;
+}

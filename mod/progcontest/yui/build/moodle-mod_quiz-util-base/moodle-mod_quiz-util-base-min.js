@@ -1,0 +1,1 @@
+YUI.add("moodle-mod_progcontest-util-base",function(o,d){o.namespace("Moodle.mod_progcontest.util")},"@VERSION@");
