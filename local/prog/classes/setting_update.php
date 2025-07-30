@@ -6,7 +6,7 @@ class admin_setting_configtext_notify extends admin_setting_configtext {
 
         // before updating the setting, trigger an event if the value is changing
         if ($oldvalue !== $data) {
-            \local_programming\event\before_setting_updated::create([
+            \local_prog\event\before_setting_updated::create([
                 'context' => \context_system::instance(),
                 'other' => [
                     'name' => $this->name,
@@ -20,7 +20,7 @@ class admin_setting_configtext_notify extends admin_setting_configtext {
         
         // if the setting was successfully updated and the value has changed, trigger the after event
         if ($status === '' && $oldvalue !== $data) {
-            \local_programming\event\after_setting_updated::create([
+            \local_prog\event\after_setting_updated::create([
                 'context' => \context_system::instance(),
                 'other' => [
                     'name' => $this->name,

@@ -8,12 +8,12 @@
  *      Extra information about event.
  * }
  *
- * @package    local_myplugin
+ * @package    local_prog
  * @since      Moodle 3.11
  * @copyright  2025 Dinh
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace local_myplugin\event;
+namespace local_prog\event;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -25,7 +25,7 @@ class before_setting_updated extends \core\event\base {
     }
 
     public static function get_name() {
-        return get_string('event_setting_before_updated', 'local_myplugin');
+        return get_string('event_setting_before_updated', 'local_prog');
     }
 
     public function get_description() {
@@ -33,6 +33,6 @@ class before_setting_updated extends \core\event\base {
     }
 
     public function get_url() {
-        return new \moodle_url('/admin/settings.php', ['section' => 'local_myplugin']);
+        return new \moodle_url('/admin/settings.php', ['section' => 'local_prog']);
     }
 }
