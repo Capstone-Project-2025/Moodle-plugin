@@ -1,10 +1,10 @@
 <?php
 require_once(__DIR__ . '/../link_dmoj.php');
 
-class local_programming_observer {
+class local_prog_observer {
     public static function link_dmoj(\core\event\base $event) {
         $userid = $event->userid;
-        $newvalue = get_config('local_programming', 'dmoj_domain');
+        $newvalue = get_config('local_prog', 'dmoj_domain');
 
         debugging("DMOJ domain is {$newvalue}");
         debugging("Linking DMOJ for user ID: {$event->objectid}");

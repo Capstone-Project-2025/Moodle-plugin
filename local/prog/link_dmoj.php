@@ -52,7 +52,7 @@ function link_dmoj($user_id = null) {
     debugging("Linking DMOJ for users: " . json_encode($payload));
 
     // send request to force create DMOJ account
-    $request = new ForceCreateDMOJAccount($payload);
+    $request = new local_prog\api\ForceCreateDMOJAccount($payload);
     $response = $request->run();
 
     // get the response and save to db
@@ -95,7 +95,7 @@ function unlink_dmoj($user_id = null) {
     }
 
     // send request to delete DMOJ account
-    $request = new DeleteDMOJAccount($params);
+    $request = new local_prog\api\DeleteDMOJAccount($params);
     $response = $request->run();
 
     debugging("Unlinking DMOJ for users with ids: " . json_encode($params));
