@@ -2,7 +2,7 @@
 require_once('../../config.php');
 require_once(__DIR__ . '/classes/api/requests_to_dmoj.php');
 
-$request = new FetchZipFile(optional_param('download_url', '', PARAM_URL));
+$request = new local_prog\api\FetchZipFile(optional_param('download_url', '', PARAM_URL));
 $fileResponse = $request->run();
 
 if ($fileResponse && isset($fileResponse['body']) && $fileResponse['body']) {

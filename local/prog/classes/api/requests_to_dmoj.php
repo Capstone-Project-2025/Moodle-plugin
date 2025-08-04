@@ -21,6 +21,8 @@
  * @copyright  Dinh
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+namespace local_prog\api;
+
 require_once(__DIR__ . '/APIRequest.php');
 
 function get_dmoj_domain(): string {
