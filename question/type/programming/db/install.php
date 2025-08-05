@@ -5,7 +5,7 @@ defined('MOODLE_INTERNAL') || die();
  * Installation script for question_type_programming plugin
  */
 
-function xmldb_qtype_programmingramming_install() {
+function xmldb_qtype_programming_install() {
     global $DB;
 
     // Insert default programming languages

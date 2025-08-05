@@ -88,7 +88,7 @@
 
 
 
-        <TABLE NAME="qtype_programmingramming_options" COMMENT="Options for programming questions.">
+        <TABLE NAME="qtype_programming_options" COMMENT="Options for programming questions.">
             <FIELDS>
                 <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
                 <FIELD NAME="questionid" TYPE="int" LENGTH="10" NOTNULL="true" COMMENT="ID of the question"/>
@@ -102,7 +102,7 @@
             </KEYS>
         </TABLE>
 
-<TABLE NAME="qtype_programmingramming_submission" COMMENT="Stores external submission references for programming questions.">
+<TABLE NAME="qtype_programming_submission" COMMENT="Stores external submission references for programming questions.">
     <FIELDS>
         <FIELD NAME="submission_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="question_id" TYPE="int" LENGTH="10" NOTNULL="true"/>

@@ -1,9 +1,9 @@
 <?php
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot . '/local/prog/classes/api/ProblemSubmission.php');
+require_once($CFG->dirroot . '/local/dmoj_user_link/classes/api/ProblemSubmission.php');
 
-use local_prog\api\ProblemSubmission;
+use local_dmoj_user_link\api\ProblemSubmission;
 
 /**
  * Defines the behavior and grading logic for the programming question type.

@@ -1,8 +1,8 @@
 <?php
 require_once(__DIR__ . '/../../../../config.php');
-require_once($CFG->dirroot . '/local/prog/classes/api/ProblemSubmission.php');
+require_once($CFG->dirroot . '/local/dmoj_user_link/classes/api/ProblemSubmission.php');
 
-use local_prog\api\ProblemSubmission;
+use local_dmoj_user_link\api\ProblemSubmission;
 
 require_login();
 header('Content-Type: application/json');

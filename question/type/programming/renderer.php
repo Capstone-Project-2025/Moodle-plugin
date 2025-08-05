@@ -1,9 +1,42 @@
 <?php 
 defined('MOODLE_INTERNAL') || die();
 
-class qtype_programming_renderer extends qtype_renderer {
+class qtype_programming_renderer extends qtype_renderer
+{
 
-    public function formulation_and_controls(question_attempt $qa, question_display_options $options) {
+    public function head_code(question_attempt $qa)
+    {
+        global $PAGE;
+
+        $baseurl = '/question/type/programming/thirdparty/codemirror';
+
+        // ✅ CSS
+        $PAGE->requires->css("$baseurl/lib/codemirror.css");
+        $PAGE->requires->css("$baseurl/theme/material-darker.css");
+        $PAGE->requires->css("$baseurl/theme/eclipse.css");
+
+        // ✅ JS core
+        $PAGE->requires->js(new moodle_url("$baseurl/lib/codemirror.js"), true);
+
+        // ✅ Modes nécessaires
+        $PAGE->requires->js(new moodle_url("$baseurl/mode/clike/clike.js"), true);
+        $PAGE->requires->js(new moodle_url("$baseurl/mode/python/python.js"), true);
+        $PAGE->requires->js(new moodle_url("$baseurl/mode/pascal/pascal.js"), true);
+        $PAGE->requires->js(new moodle_url("$baseurl/mode/perl/perl.js"), true);
+        $PAGE->requires->js(new moodle_url("$baseurl/mode/gas/gas.js"), true);
+        $PAGE->requires->js(new moodle_url("$baseurl/mode/shell/shell.js"), true);
+        $PAGE->requires->js(new moodle_url("$baseurl/mode/brainfuck/brainfuck.js"), true);
+        $PAGE->requires->js(new moodle_url("$baseurl/mode/awk/awk.js"), true);
+
+        // (optionnel) récupérer les options d'affichage si nécessaire
+        // $options = $qa->get_display_options();
+
+        return parent::head_code($qa);
+    }
+
+
+    public function formulation_and_controls(question_attempt $qa, question_display_options $options)
+    {
         global $DB, $PAGE;
 
         $question = $qa->get_question();
@@ -48,7 +81,7 @@ class qtype_programming_renderer extends qtype_renderer {
             $languages = $DB->get_records_sql_menu($sql, ['problemid' => $problemid]);
 
             // Format languages for template rendering
-            $languages = array_map(function($id, $name) {
+            $languages = array_map(function ($id, $name) {
                 return ['id' => $id, 'name' => $name];
             }, array_keys($languages), $languages);
         }
@@ -86,92 +119,57 @@ class qtype_programming_renderer extends qtype_renderer {
         if (!defined('QTYPE_PROGRAMMING_CODEMIRROR_LOADED')) {
             define('QTYPE_PROGRAMMING_CODEMIRROR_LOADED', true);
 
-            $output = '
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const editorElement = document.getElementById("' . $editorid . '");
-    if (!editorElement || typeof CodeMirror === "undefined") return;
 
-    const langMap = {
-        1: "python", 8: "python",
-        4: "text/x-csrc",
-        5: "text/x-c++src", 6: "text/x-c++src", 13: "text/x-c++src", 15: "text/x-c++src", 18: "text/x-c++src",
-        9: "text/x-java",
-        10: "text/plain"
-    };
-
-    const editor = CodeMirror.fromTextArea(editorElement, {
-        lineNumbers: true,
-        mode: langMap[parseInt(document.getElementById("' . $selectid . '").value, 10)] || "text/plain",
-        theme: "material-darker",
-        indentUnit: 4,
-        tabSize: 4,
-        indentWithTabs: false
-    });
-
-    window["codemirrorEditor_' . $slot . '"] = editor;
-
-    let currentTheme = "material-darker";
-    const themeBtn = document.getElementById("' . $themebtnid . '");
-    if (themeBtn) {
-        themeBtn.addEventListener("click", function () {
-            currentTheme = currentTheme === "material-darker" ? "eclipse" : "material-darker";
-            editor.setOption("theme", currentTheme);
-        });
-    }
-
-    const select = document.getElementById("' . $selectid . '");
-    if (select) {
-        select.addEventListener("change", function () {
-            const selected = parseInt(this.value, 10);
-            const mode = langMap[selected] || "text/plain";
-            editor.setOption("mode", mode);
-        });
-    }
-});
-</script>
-';
-        } else {
             $output = '';
+
+
+            $PAGE->requires->js_call_amd('qtype_programming/codemirror_loader', 'init', [
+                $editorid,
+                strtolower($languages[0]['name'] ?? 'text'),  // ex: 'cpp17', 'python3'
+                'material-darker',
+                $themebtnid,
+                $selectid  // ID du <select> pour écouter les changements
+            ]);
+
+
+            // 📦 Load JavaScript for submission handler
+            $PAGE->requires->js_call_amd('qtype_programming/submission', 'init', [[
+                'inputId' => $editorid,
+                'selectId' => $selectid,
+                'submitButtonId' => $submitbuttonid,
+                'themeButtonId' => $themebtnid,
+                'resultContainerId' => $resultcontainerid,
+                'submitUrl' => $submiturl->out(false),
+                'resultUrl' => $getsubmissionurl->out(false),
+                'submissionListUrl' => $getsubmissionListUrl->out(false),
+                'problemCode' => $problemcode,
+                'sesskey' => sesskey(),
+                'questionId' => $questionProgramming->id,
+                'showSubmissionsButtonId' => 'showsubmissionsbtn_' . $slot,
+                'submissionListContainerId' => 'submissionlist_' . $slot,
+                'submissionIdName' => $qa->get_qt_field_name('submission_id'),
+                'slot' => $slot,
+                'attemptid' => $attemptid,
+            ]]);
+
+            // 🖥️ Render the HTML using the Mustache template
+            return $output . $this->render_from_template('qtype_programming/renderer', [
+                    'problemcode' => $problemcode,
+                    'name' => $name,
+                    'description' => format_text($description, FORMAT_MARKDOWN),
+                    'inputname' => $inputname,
+                    'editorid' => $editorid,
+                    'selectId' => $selectid,
+                    'submitButtonId' => $submitbuttonid,
+                    'themeButtonId' => $themebtnid,
+                    'resultContainerId' => $resultcontainerid,
+                    'showSubmissionsButtonId' => 'showsubmissionsbtn_' . $slot,
+                    'submissionListContainerId' => 'submissionlist_' . $slot,
+                    'answer' => $answer,
+                    'languages' => $languages,
+                    'submissionidname' => $qa->get_qt_field_name('submission_id'),
+                    'submissionid' => $response['submission_id'] ?? ''
+                ]);
         }
-
-        // 📦 Load JavaScript for submission handler
-        $PAGE->requires->js_call_amd('qtype_programming/submission', 'init', [[
-            'inputId' => $editorid,
-            'selectId' => $selectid,
-            'submitButtonId' => $submitbuttonid,
-            'themeButtonId' => $themebtnid,
-            'resultContainerId' => $resultcontainerid,
-            'submitUrl' => $submiturl->out(false),
-            'resultUrl' => $getsubmissionurl->out(false),
-            'submissionListUrl' => $getsubmissionListUrl->out(false),
-            'problemCode' => $problemcode,
-            'sesskey' => sesskey(),
-            'questionId' => $questionProgramming->id,
-            'showSubmissionsButtonId' => 'showsubmissionsbtn_' . $slot,
-            'submissionListContainerId' => 'submissionlist_' . $slot,
-            'submissionIdName' => $qa->get_qt_field_name('submission_id'),
-            'slot' => $slot,
-            'attemptid' => $attemptid,
-        ]]);
-
-        // 🖥️ Render the HTML using the Mustache template
-        return $output . $this->render_from_template('qtype_programming/renderer', [
-            'problemcode' => $problemcode,
-            'name' => $name,
-            'description' => format_text($description, FORMAT_MARKDOWN),
-            'inputname' => $inputname,
-            'editorid' => $editorid,
-            'selectId' => $selectid,
-            'submitButtonId' => $submitbuttonid,
-            'themeButtonId' => $themebtnid,
-            'resultContainerId' => $resultcontainerid,
-            'showSubmissionsButtonId' => 'showsubmissionsbtn_' . $slot,
-            'submissionListContainerId' => 'submissionlist_' . $slot,
-            'answer' => $answer,
-            'languages' => $languages,
-            'submissionidname' => $qa->get_qt_field_name('submission_id'),
-            'submissionid' => $response['submission_id'] ?? ''
-        ]);
     }
 }

@@ -5,8 +5,8 @@ defined('MOODLE_INTERNAL') || die();
  * Main class for the Programming question type.
  */
 require_once($CFG->dirroot . '/question/type/questiontypebase.php');
-use local_prog\api\ProblemList;
-use local_prog\api\ProblemTestData;
+use local_dmoj_user_link\api\ProblemList;
+use local_dmoj_user_link\api\ProblemTestData;
 
 class qtype_programming extends question_type {
 
