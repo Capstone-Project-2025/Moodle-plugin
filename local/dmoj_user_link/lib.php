@@ -34,11 +34,11 @@ function local_dmoj_user_linkextend_navigation_course($navigation, $course, $con
     }
 }
 
-function local_programming_myprofile_navigation(core_user\output\myprofile\tree $tree, $user, $iscurrentuser, $course) {
+function local_dmoj_user_link_myprofile_navigation(core_user\output\myprofile\tree $tree, $user, $iscurrentuser, $course) {
     global $DB, $USER;
-    $domain = get_config('local_programming', 'dmoj_domain');
+    $domain = get_config('local_dmoj_user_link', 'dmoj_domain');
     // Create a new category
-    $category = new core_user\output\myprofile\category('dmoj', get_string('category_title', 'local_programming'), 'miscellaneous');
+    $category = new core_user\output\myprofile\category('dmoj', get_string('category_title', 'local_dmoj_user_link'), 'miscellaneous');
 
     // add nodes to tree
     $tree->add_category($category);
@@ -53,7 +53,7 @@ function local_programming_myprofile_navigation(core_user\output\myprofile\tree 
         // You should leave all the nodes that need a DMOJ account here
         // create node "download user data button"
         $url = new moodle_url('/local/dmoj_user_link/index.php', []);
-        $string = get_string('download_user_data', 'local_programming');
+        $string = get_string('download_user_data', 'local_dmoj_user_link');
         $node_download = new core_user\output\myprofile\node('dmoj', 'download_user_data', $string, null, $url);
     }
 }

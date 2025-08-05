@@ -17,7 +17,7 @@
 /**
  * Readme file for local customisations
  *
- * @package    local_programming
+ * @package    local_dmoj_user_link
  * @copyright  Dinh
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -26,7 +26,7 @@ namespace local_dmoj_user_link\api;
 require_once(__DIR__ . '/APIRequest.php');
 
 function get_dmoj_domain(): string {
-    return get_config('local_programming', 'dmoj_domain') ?: 'http://example.com';
+    return get_config('local_dmoj_user_link', 'dmoj_domain') ?: 'http://example.com';
 }
 
 class PrepareDownloadData extends APIRequest {

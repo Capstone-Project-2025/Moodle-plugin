@@ -17,7 +17,7 @@
 /**
  * Readme file for local customisations
  *
- * @package    local_programming
+ * @package    local_dmoj_user_link
  * @copyright  Dinh
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -33,11 +33,11 @@ class UserDataForm extends moodleform {
         $mform = $this->_form;
         // comments
         $mform->addElement('advcheckbox', 'comment_download', 'download comments?', ' ');
-        $mform->addHelpButton('comment_download', 'downloadcommentshelp', 'local_programming');
+        $mform->addHelpButton('comment_download', 'downloadcommentshelp', 'local_dmoj_user_link');
 
         // submissions
         $mform->addElement('advcheckbox', 'submission_download', 'download submissions?',' ');
-        $mform->addHelpButton('submission_download', 'downloadsubmissionshelp', 'local_programming');
+        $mform->addHelpButton('submission_download', 'downloadsubmissionshelp', 'local_dmoj_user_link');
 
         // Appearing when submission is checked
         // i found mform->hideIf() which also works so i use that instead
