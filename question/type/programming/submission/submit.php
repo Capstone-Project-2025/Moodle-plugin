@@ -39,17 +39,20 @@ $userid      = (int)$USER->id;
 
 // 📘 Get course ID from quiz attempt (if available)
 $courseid = null;
+error_log("📥 valeur de attemptid :  $attemptid");
 if ($attemptid) {
     $sql = "
         SELECT c.id AS courseid
-        FROM {quiz_attempts} qza
-        JOIN {quiz} qz ON qz.id = qza.quiz
-        JOIN {course} c ON c.id = qz.course
-        WHERE qza.id = :attemptid
+        FROM {progcontest_attempts} pa
+        JOIN {progcontest} pc ON pc.id = pa.progcontest
+        JOIN {course} c ON c.id = pc.course
+        WHERE pa.id = :attemptid
         LIMIT 1
-    ";
+";
     $record = $DB->get_record_sql($sql, ['attemptid' => $attemptid]);
     $courseid = $record->courseid ?? null;
+    error_log('⚠️ valeur de course id : ' . $courseid);
+
 }
 
 // 🚫 Required field validation
@@ -74,10 +77,7 @@ try {
 // 📥 Handle API response
 $submission_id = $submitResponse['body']['submission_id'] ?? null;
 
-if (!$submission_id) {
-    echo json_encode(['error' => 'API did not return a submission ID']);
-    exit;
-}
+
 
 $result       = $submitResponse['body']['result'] ?? 'pending';
 $points       = $submitResponse['body']['case_points'] ?? 0;
@@ -90,13 +90,21 @@ if ($result === null) {
 
 // 💾 Insert submission into Moodle database
 $questionrecord = $DB->get_record('qtype_programming_options', ['id' => $questionid]);
+
 if ($questionrecord) {
+    error_log('📥 questionrecord existe');
+} else {
+    error_log('📥 questionrecord est null/false');
+}
+if ($questionrecord) {
+    error_log("📥 present dans le if : question not null");
+    error_log("📥 valeur de attemptid numero 2 avant input :  $attemptid");
     try {
         $DB->execute(
             "INSERT INTO {qtype_programming_submission}
-            (submission_id, question_id, user_id, result, point, total_point, language_id, course_id, code)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [$submission_id, $questionid, $userid, $result, $points, $total_point, $languageId, $courseid, $source_code]
+            (submission_id, question_id, user_id, result, point, total_point, language_id, course_id, code, attempt_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$submission_id, $questionid, $userid, $result, $points, $total_point, $languageId, $courseid, $source_code, $attemptid]
         );
     } catch (dml_exception $e) {
         error_log('⚠️ INSERT failed: ' . $e->getMessage());

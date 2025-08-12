@@ -12,11 +12,13 @@ global $DB, $USER;
 
 // 🔎 Get the question ID from the request
 $questionid = required_param('questionid', PARAM_INT);
+$attemptid  = optional_param('attemptid', 0, PARAM_INT);
 
 // 📥 Get all submissions made by the current user for the given question
 $submissions = $DB->get_records('qtype_programming_submission', [
     'user_id' => $USER->id,
-    'question_id' => $questionid
+    'question_id' => $questionid,
+    'attempt_id' => $attemptid,
 ]);
 
 $result = [];

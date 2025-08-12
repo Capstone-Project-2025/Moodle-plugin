@@ -112,6 +112,7 @@
         <FIELD NAME="total_point" TYPE="float" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="language_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="course_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="attempt_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="code" TYPE="text" NOTNULL="true"/>
     </FIELDS>
     <KEYS>

@@ -74,32 +74,32 @@ class qtype_programming_question extends question_graded_automatically {
      * Grades the response using your custom API class.
      */
     public function grade_response(array $response) {
-    global $DB;
+        global $DB;
 
-    $submissionid = $response['submission_id'] ?? null;
-    if (!$submissionid) {
-        return [0, question_state::$gradedwrong];
+        $submissionid = $response['submission_id'] ?? null;
+        if (!$submissionid) {
+            return [0, question_state::$gradedwrong];
+        }
+
+        $record = $DB->get_record('qtype_programming_submission', ['submission_id' => $submissionid]);
+
+
+        if (!$record || !isset($record->point) || !isset($record->total_point)) {
+            return [0, question_state::$gradedwrong];
+        }
+
+        $points = (float) $record->point;
+        $total = (float) $record->total_point;
+
+        if ($total <= 0) {
+            return [0, question_state::$gradedwrong];
+        }
+
+        $fraction = min(1.0, $points / $total);
+        $state = $fraction >= 1.0 ? question_state::$gradedright : question_state::$gradedpartial;
+
+        return [$fraction, $state];
     }
-
-   $record = $DB->get_record('qtype_programming_submission', ['submission_id' => $submissionid]);
-
-
-    if (!$record || !isset($record->point) || !isset($record->total_point)) {
-        return [0, question_state::$gradedwrong];
-    }
-
-    $points = (float) $record->point;
-    $total = (float) $record->total_point;
-
-    if ($total <= 0) {
-        return [0, question_state::$gradedwrong];
-    }
-
-    $fraction = min(1.0, $points / $total);
-    $state = $fraction >= 1.0 ? question_state::$gradedright : question_state::$gradedpartial;
-
-    return [$fraction, $state];
-}
 
 
 

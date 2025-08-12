@@ -29,6 +29,9 @@ for ($i = 0; $i < $zip->numFiles; $i++) {
         $input_files[] = $name;
     } elseif (preg_match('/\.out$/', $name)) {
         $output_files[] = $name;
+    }   elseif (preg_match('/\.txt$/', $name)) {
+        $input_files[] = $name;
+        $output_files[] = $name;
     }
 }
 $zip->close();

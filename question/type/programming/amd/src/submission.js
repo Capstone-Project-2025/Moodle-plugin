@@ -12,7 +12,7 @@ define('qtype_programming/submission', ['jquery'], function($) {
                 if (inputEl) {
                     clearInterval(waitForElement);
 
-                    const editor = window['codemirrorEditor_' + params.slot] || {
+                    const editor = window['codemirrorEditor_' + params.inputId] || {
                         getValue: function() {
                             return inputEl.value;
                         }
@@ -103,7 +103,12 @@ define('qtype_programming/submission', ['jquery'], function($) {
 
                     // ✅ Submit the solution
                     $('#' + params.submitButtonId).on('click', function() {
-                        const code = editor.getValue();
+                        if (editor && typeof editor.save === 'function') {
+                            editor.save(); // met à jour le DOM
+                        }
+                        const code = inputEl.value; // contient le texte après .save()
+
+
                         const languageId = parseInt($('#' + params.selectId).val(), 10);
                         resultDiv = $('#' + params.resultContainerId);
                         resultDiv.html('Submitting...');
@@ -156,6 +161,8 @@ define('qtype_programming/submission', ['jquery'], function($) {
                         const url = new URL(params.submissionListUrl);
                         url.searchParams.append('questionid', params.questionId);
                         url.searchParams.append('sesskey', params.sesskey);
+                        url.searchParams.append('attemptid', params.attemptid);
+
 
                         fetch(url.toString(), {
                             method: 'GET',
@@ -179,7 +186,6 @@ define('qtype_programming/submission', ['jquery'], function($) {
                                 html += `
                                     <li style="margin-bottom: 1em;">
                                         <div>
-                                            <strong>ID:</strong> ${sub.submission_id} |
                                             <strong>Status:</strong> ${sub.status} |
                                             <strong>Lang:</strong> ${sub.language ?? '-'} |
                                             <strong>Time:</strong> ${sub.time ?? '-'} |

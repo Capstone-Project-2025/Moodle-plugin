@@ -16,12 +16,19 @@ class qtype_programming extends question_type {
         if ($question->problem_mode === 'new') {
             // Sanitize inputs
             $code = trim($question->new_code);
+
             $name = trim($question->new_name);
+            $name = preg_replace('/\s+/u', ' ', $name);
+            $name = strip_tags($name);
+
+            // Description
             $rawdescription = $question->new_description['text'] ?? '';
-            $description = trim(strip_tags($rawdescription));
+            $cleanhtml = clean_text($rawdescription, FORMAT_HTML);  // assainit le HTML
+            $description = trim(html_to_text($cleanhtml));
+
             $time_limit = floatval($question->new_time_limit);
             $memory_limit = intval($question->new_memory_limit);
-            $points = max(10, min(intval($question->new_points), 100));
+            $points = 100;
             $difficulty = $question->new_difficulty;
             $ispublic = !empty($question->new_is_public) ? 1 : 0;
 
@@ -43,7 +50,6 @@ class qtype_programming extends question_type {
                 }
             }
 
-            // ✅ Appel API
             $payload = [
                 'code' => $code,
                 'name' => $name,
@@ -124,11 +130,12 @@ class qtype_programming extends question_type {
                 $testcases = extract_testcases_from_zip($zipfile);
                 $formatted_cases = [];
 
-                // ✅ Récupérer les test_cases postés par le formulaire JS
                 $rawcases = json_decode($question->test_cases_json ?? '[]', true);
 
                 if (!empty($rawcases)) {
                     foreach ($rawcases as $index => $case) {
+                        $points = isset($case['points']) ? (int)$case['points'] : 2;
+                        if ($points < 1) { $points = 1; }
                         $formatted_cases[] = [
                             'type' => $case['type'] ?? 'C',
                             'input_file' => $case['input_file'] ?? '',
@@ -144,7 +151,7 @@ class qtype_programming extends question_type {
                             'type' => 'C',
                             'input_file' => $case['input_file'],
                             'output_file' => $case['output_file'],
-                            'points' => 0,
+                            'points' => 1,
                             'order' => $index + 1
                         ];
                     }

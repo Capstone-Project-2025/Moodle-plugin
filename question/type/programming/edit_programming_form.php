@@ -51,9 +51,6 @@ class qtype_programming_edit_form extends question_edit_form {
         $mform->addElement('editor', 'new_description', 'Description');
         $mform->setType('new_description', PARAM_RAW);
 
-        $mform->addElement('text', 'new_points', 'Points');
-        $mform->setType('new_points', PARAM_INT);
-        $mform->setDefault('new_points', 100);
 
         $mform->addElement('select', 'new_difficulty', 'Difficulty', [
             'easy' => 'Easy',
@@ -72,7 +69,7 @@ class qtype_programming_edit_form extends question_edit_form {
 
         $mform->addElement('text', 'new_memory_limit', 'Memory Limit (KB)');
         $mform->setType('new_memory_limit', PARAM_INT);
-        $mform->setDefault('new_memory_limit', 262144);
+        $mform->setDefault('new_memory_limit', 25000);
 
         // === TYPES & LANGUAGES ===
         $types = $DB->get_records_menu('programming_type', null, '', 'id, name');
@@ -148,7 +145,7 @@ class qtype_programming_edit_form extends question_edit_form {
                 <table class="generaltable" id="testcase-table" style="width: 100%; margin-bottom: 20px;">
                   <thead>
                     <tr>
-                      <th>Type</th><th>Input File</th><th>Output File</th><th>Points</th><th>Order</th><th>Action</th>
+                      <th>Type</th><th>Input File</th><th>Output File</th><th>Points</th><th>Action</th>
                     </tr>
                   </thead>
                   <tbody id="testcase-body"></tbody>
@@ -178,240 +175,286 @@ class qtype_programming_edit_form extends question_edit_form {
             $mform->setType('questiontext', PARAM_RAW);
         }
 
-// ✅ MOD : ajoute l’URL vers parsezip.php
-        $parsezipurl = new moodle_url('/question/type/programming/parsezip.php'); // ✅ PAS qtype_programming
+// ✅ URL vers parsezip.php
+        $parsezipurl = new moodle_url('/question/type/programming/parsezip.php');
+        $parsezipurljs = $parsezipurl->out(false);
 
-// === JS ===
+// ✅ JS: prêt à coller
+        $PAGE->requires->js_init_code('
+const parseZipUrl = "' . $parsezipurljs . '";
+let latestInputOptions = "";
+let latestOutputOptions = "";
 
-        $PAGE->requires->css(new moodle_url('/question/type/programming/styles.css'));
+document.addEventListener("DOMContentLoaded", function () {
+    var modeSelect = document.querySelector("[name=\"problem_mode\"]");
+    var existingSection = document.getElementById("id_existing_problem_section");
+    var newSection = document.getElementById("id_new_problem_section");
+    var testcaseSection = document.getElementById("id_testcase_section");
+    var feedbackBox = document.getElementById("zip-feedback");
 
+    var select = document.querySelector("[name=\"problemlist\"]");
+    var nameField = document.querySelector("[name=\"name\"]");
+    var codeField = document.querySelector("[name=\"problemcode\"]");
+    var problemIdField = document.querySelector("[name=\"problemid\"]");
+    var codeDisplay = document.querySelector("[name=\"problemcode_display\"]");
+    var descriptionDisplay = document.querySelector("[name=\"description_display\"]");
+    var qtTextField = document.querySelector("[name=\"questiontext[text]\"]");
+    var editor = document.querySelector("[name=\"new_description[text]\"]");
 
-        $PAGE->requires->js_init_code("
-const parseZipUrl = '$parsezipurl';
-let latestInputOptions = '';
-let latestOutputOptions = '';
-
-document.addEventListener('DOMContentLoaded', function () {
-    const modeSelect = document.querySelector('[name=\"problem_mode\"]');
-    const existingSection = document.getElementById('id_existing_problem_section');
-    const newSection = document.getElementById('id_new_problem_section');
-    const testcaseSection = document.getElementById('id_testcase_section');
-    const feedbackBox = document.getElementById('zip-feedback');
-
-    const select = document.querySelector('[name=\"problemlist\"]');
-    const nameField = document.querySelector('[name=\"name\"]');
-    const codeField = document.querySelector('[name=\"problemcode\"]');
-    const problemIdField = document.querySelector('[name=\"problemid\"]');
-    const codeDisplay = document.querySelector('[name=\"problemcode_display\"]');
-    const descriptionDisplay = document.querySelector('[name=\"description_display\"]');
-    const qtTextField = document.querySelector('[name=\"questiontext[text]\"]');
-    const editor = document.querySelector('[name=\"new_description[text]\"]');
-
-    const qtWrapper = document.querySelector('[id^=\"fitem_id_questiontext\"]');
-    const nameWrapper = document.querySelector('[id^=\"fitem_id_name\"]');
-    if (qtWrapper) qtWrapper.style.display = 'none';
-    if (nameWrapper) nameWrapper.style.display = 'none';
+    var qtWrapper = document.querySelector("[id^=\"fitem_id_questiontext\"]");
+    var nameWrapper = document.querySelector("[id^=\"fitem_id_name\"]");
+    if (qtWrapper) qtWrapper.style.display = "none";
+    if (nameWrapper) nameWrapper.style.display = "none";
 
     function toggleSections() {
-        const mode = modeSelect.value;
-        existingSection.style.display = (mode === 'existing') ? '' : 'none';
-        newSection.style.display = (mode === 'new') ? '' : 'none';
-        if (testcaseSection) testcaseSection.style.display = (mode === 'new') ? '' : 'none';
+        var mode = modeSelect ? modeSelect.value : "existing";
+        if (existingSection) existingSection.style.display = (mode === "existing") ? "" : "none";
+        if (newSection) newSection.style.display = (mode === "new") ? "" : "none";
+        if (testcaseSection) testcaseSection.style.display = (mode === "new") ? "" : "none";
     }
 
     toggleSections();
-    modeSelect.addEventListener('change', toggleSections);
+    if (modeSelect) {
+        modeSelect.addEventListener("change", toggleSections);
+    }
 
-    fetch(M.cfg.wwwroot + '/question/type/programming/fetchproblems.php')
-        .then(r => r.json())
-        .then(data => {
-            data.forEach(p => {
-                const opt = document.createElement('option');
+    // Remplit la liste des problèmes existants
+    fetch(M.cfg.wwwroot + "/question/type/programming/fetchproblems.php")
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (!select) return;
+            data.forEach(function (p) {
+                var opt = document.createElement("option");
                 opt.value = p.code;
                 opt.textContent = p.name;
                 select.appendChild(opt);
             });
         });
 
-    select.addEventListener('change', function () {
-        const code = this.value;
-        if (!code) return;
-        fetch(M.cfg.wwwroot + '/question/type/programming/fetchproblem.php?code=' + encodeURIComponent(code))
-            .then(r => r.json())
-            .then(data => {
-                const desc = data.description || '';
-                if (nameField) nameField.value = data.name || '';
-                if (codeField) codeField.value = data.code || '';
-                if (problemIdField) problemIdField.value = data.id || '';
-                if (codeDisplay) codeDisplay.value = data.code || '';
-                if (descriptionDisplay) descriptionDisplay.value = desc;
-                if (qtTextField) qtTextField.value = desc;
-            });
-    });
+    if (select) {
+        select.addEventListener("change", function () {
+            var code = this.value;
+            if (!code) return;
+            fetch(M.cfg.wwwroot + "/question/type/programming/fetchproblem.php?code=" + encodeURIComponent(code))
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var desc = data.description || "";
+                    if (nameField) nameField.value = data.name || "";
+                    if (codeField) codeField.value = data.code || "";
+                    if (problemIdField) problemIdField.value = data.id || "";
+                    if (codeDisplay) codeDisplay.value = data.code || "";
+                    if (descriptionDisplay) descriptionDisplay.value = desc;
+                    if (qtTextField) qtTextField.value = desc;
+                });
+        });
+    }
 
-    const form = document.querySelector('form');
+    // Sauvegarde : hydrate les champs cachés
+    var form = document.querySelector("form");
     if (form) {
-        form.addEventListener('submit', function () {
-            const mode = modeSelect.value;
+        form.addEventListener("submit", function () {
+            var mode = modeSelect ? modeSelect.value : "existing";
             if (!qtTextField || !nameField) return;
 
-            if (mode === 'existing') {
-                qtTextField.value = descriptionDisplay ? descriptionDisplay.value : '';
-                nameField.value = select && select.selectedIndex >= 0 ? select.options[select.selectedIndex].textContent : 'Unnamed existing problem';
+            if (mode === "existing") {
+                qtTextField.value = descriptionDisplay ? descriptionDisplay.value : "";
+                if (select && select.selectedIndex >= 0) {
+                    nameField.value = select.options[select.selectedIndex].textContent;
+                } else {
+                    nameField.value = "Unnamed existing problem";
+                }
             } else {
                 if (editor) {
-                    const tempDiv = document.createElement('div');
+                    var tempDiv = document.createElement("div");
                     tempDiv.innerHTML = editor.value;
-                    qtTextField.value = tempDiv.textContent || tempDiv.innerText || '';
+                    qtTextField.value = tempDiv.textContent || tempDiv.innerText || "";
                 }
-                const newNameInput = document.querySelector('[name=\"new_name\"]');
+                var newNameInput = document.querySelector("[name=\"new_name\"]");
                 if (newNameInput) {
-                    nameField.value = newNameInput.value || 'Unnamed new problem';
+                    nameField.value = newNameInput.value || "Unnamed new problem";
                 }
 
-                const testCases = [];
-                document.querySelectorAll('#testcase-body tr').forEach((row, index) => {
-                    const type = row.querySelector('[name$=\"[type]\"]')?.value;
-                    const input = row.querySelector('[name$=\"[input_file]\"]')?.value;
-                    const output = row.querySelector('[name$=\"[output_file]\"]')?.value;
-                    const points = row.querySelector('[name$=\"[points]\"]')?.value;
-                    const order = row.querySelector('[name$=\"[order]\"]')?.value;
+                var testCases = [];
+                var rows = document.querySelectorAll("#testcase-body tr");
+                for (var i = 0; i < rows.length; i++) {
+                    var row = rows[i];
+                    var typeEl   = row.querySelector("[name$=\"[type]\"]");
+                    var inputEl  = row.querySelector("[name$=\"[input_file]\"]");
+                    var outputEl = row.querySelector("[name$=\"[output_file]\"]");
+                    var pointsEl = row.querySelector("[name$=\"[points]\"]");
+                    
+                    var p = parseInt(pointsEl && pointsEl.value !== "" ? pointsEl.value : "2", 10);
+                    if (isNaN(p) || p < 1) { p = 1; }
+                    
 
                     testCases.push({
-                        type: type ?? 'C',
-                        input_file: input ?? '',
-                        output_file: output ?? '',
-                        points: parseInt(points ?? '0'),
-                        order: parseInt(order ?? index + 1),
+                        type:  typeEl  ? typeEl.value  : "C",
+                        input_file:  inputEl  ? inputEl.value  : "",
+                        output_file: outputEl ? outputEl.value : "",
+                        points: p,
+                        order: i + 1
                     });
-                });
+                }
 
-                const hidden = document.querySelector('[name=\"test_cases_json\"]');
+                var hidden = document.querySelector("[name=\"test_cases_json\"]");
                 if (hidden) {
-                    hidden.value = JSON.stringify(testCases);
+                    try { hidden.value = JSON.stringify(testCases); } catch (e) { hidden.value = "[]"; }
                 }
             }
         });
     }
 
+    // Fonctions utilitaires pour la table des test cases
     window.addTestCase = function () {
-        let caseIndex = document.querySelectorAll('#testcase-body tr').length;
-        const tbody = document.getElementById('testcase-body');
+        var caseIndex = document.querySelectorAll("#testcase-body tr").length;
+        var tbody = document.getElementById("testcase-body");
+        if (!tbody) return;
 
-        const row = document.createElement('tr');
-        row.innerHTML =
-            '<td>' +
-                '<select name=\"test_cases[' + caseIndex + '][type]\" class=\"form-control\" onchange=\"handleTypeChange(this)\">' +
-                    '<option value=\"C\" selected>Normal case</option>' +
-                    '<option value=\"S\">Batch start</option>' +
-                    '<option value=\"E\">Batch end</option>' +
-                '</select>' +
-            '</td>' +
-            '<td><select name=\"test_cases[' + caseIndex + '][input_file]\" class=\"form-control\">' + latestInputOptions + '</select></td>' +
-            '<td><select name=\"test_cases[' + caseIndex + '][output_file]\" class=\"form-control\">' + latestOutputOptions + '</select></td>' +
-            '<td><input type=\"number\" name=\"test_cases[' + caseIndex + '][points]\" value=\"0\" class=\"form-control\"></td>' +
-            '<td><input type=\"number\" name=\"test_cases[' + caseIndex + '][order]\" value=\"' + (caseIndex + 1) + '\" class=\"form-control\"></td>' +
-            '<td><button type=\"button\" onclick=\"removeRow(this)\">❌</button></td>';
+        var row = document.createElement("tr");
+        var html = "";
+        html += "<td>";
+        html +=   "<select name=\"test_cases[" + caseIndex + "][type]\" class=\"form-control\" onchange=\"handleTypeChange(this)\">";
+        html +=     "<option value=\"C\" selected>Normal case</option>";
+        html +=     "<option value=\"S\">Batch start</option>";
+        html +=     "<option value=\"E\">Batch end</option>";
+        html +=   "</select>";
+        html += "</td>";
+        html += "<td><select name=\"test_cases[" + caseIndex + "][input_file]\" class=\"form-control\">" + latestInputOptions + "</select></td>";
+        html += "<td><select name=\"test_cases[" + caseIndex + "][output_file]\" class=\"form-control\">" + latestOutputOptions + "</select></td>";
+        html += "<td><input type=\"number\" name=\"test_cases[" + caseIndex + "][points]\" value=\"2\" min=\"1\" step=\"1\" class=\"form-control\"></td>";
+        html += "<td><button type=\"button\" onclick=\"removeRow(this)\">❌</button></td>";
+        row.innerHTML = html;
         tbody.appendChild(row);
     };
 
     window.removeRow = function (btn) {
-        btn.closest('tr').remove();
+        var tr = btn ? btn.closest("tr") : null;
+        if (tr && tr.parentNode) tr.parentNode.removeChild(tr);
     };
 
-    window.handleTypeChange = function (select) {
-        const row = select.closest('tr');
-        const type = select.value;
-        const disable = type !== 'C';
+    window.handleTypeChange = function (selectEl) {
+        var row = selectEl ? selectEl.closest("tr") : null;
+        if (!row) return;
+        var type = selectEl.value;
+        var disable = (type !== "C");
 
-        ['input_file', 'output_file', 'points', 'order'].forEach(function(field) {
-            const el = row.querySelector('[name$=\"[' + field + ']\"]');
+        var fields = ["input_file", "output_file", "points"];
+        for (var i = 0; i < fields.length; i++) {
+            var el = row.querySelector("[name$=\"[" + fields[i] + "]\"]");
             if (el) {
                 el.disabled = disable;
-                if (disable) {
-                    el.classList.add('disabled');
-                } else {
-                    el.classList.remove('disabled');
-                }
+                if (disable) { el.classList.add("disabled"); }
+                else { el.classList.remove("disabled"); }
             }
-        });
+        }
     };
 
-    // ✅ Nouveau : surveiller le filepicker (après upload)
-    const filepickerInterval = setInterval(function () {
-        const preview = document.querySelector('.filepicker-filename a');
-        if (preview && preview.href.endsWith('.zip')) {
-            clearInterval(filepickerInterval);
+    // ========= Re-parse du ZIP à chaque changement dans le filepicker =========
+    function updateAllSelects() {
+        var ins = document.querySelectorAll("select[name$=\"[input_file]\"]");
+        var outs = document.querySelectorAll("select[name$=\"[output_file]\"]");
+        for (var i = 0; i < ins.length; i++)  { ins[i].innerHTML  = latestInputOptions; }
+        for (var j = 0; j < outs.length; j++) { outs[j].innerHTML = latestOutputOptions; }
+    }
 
-            const fileUrl = preview.href;
-            const fileName = preview.textContent;
+    function parseZipBlob(blob, fileName) {
+        var formData = new FormData();
+        formData.append("zipfile", blob, fileName);
+        formData.append("sesskey", M.cfg.sesskey);
 
-            fetch(fileUrl)
-                .then(res => res.blob())
-                .then(blob => {
-                    const formData = new FormData();
-                    formData.append('zipfile', blob, fileName);
-                    formData.append('sesskey', M.cfg.sesskey);
+        return fetch(parseZipUrl, {
+            method: "POST",
+            body: formData,
+            credentials: "same-origin"
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            if (data.error) {
+                if (feedbackBox) { feedbackBox.textContent = "❌ ZIP error: " + data.error; feedbackBox.style.color = "red"; }
+                latestInputOptions = "";
+                latestOutputOptions = "";
+                updateAllSelects();
+                return;
+            }
+            if (feedbackBox) { feedbackBox.textContent = "✅ ZIP parsed"; feedbackBox.style.color = "green"; }
 
-                    return fetch(parseZipUrl, {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'same-origin'
-                    });
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.error) {
-                        if (feedbackBox) {
-                            feedbackBox.textContent = '❌ ZIP error: ' + data.error;
-                            feedbackBox.style.color = 'red';
-                        }
-                        return;
-                    }
+            // Pas de templates littéraux pour compat PHP 7.3 (pas d\'${...} interprété par PHP)
+            latestInputOptions  = data.input_files.map(function (f) {
+                return "<option value=\"" + f + "\">" + f + "</option>";
+            }).join("");
 
-                    if (feedbackBox) {
-                        feedbackBox.style.color = 'green';
-                    }
+            latestOutputOptions = data.output_files.map(function (f) {
+                return "<option value=\"" + f + "\">" + f + "</option>";
+            }).join("");
 
-                    latestInputOptions = data.input_files.map(f => '<option value=\"' + f + '\">' + f + '</option>').join('');
-                    latestOutputOptions = data.output_files.map(f => '<option value=\"' + f + '\">' + f + '</option>').join('');
+            updateAllSelects();
+        })
+        .catch(function (err) {
+            if (feedbackBox) { feedbackBox.textContent = "❌ AJAX error: " + err.message; feedbackBox.style.color = "red"; }
+            if (window.console && console.error) console.error(err);
+        });
+    }
 
-                    document.querySelectorAll('select[name$=\"[input_file]\"]').forEach(select => {
-                        select.innerHTML = latestInputOptions;
-                    });
-                    document.querySelectorAll('select[name$=\"[output_file]\"]').forEach(select => {
-                        select.innerHTML = latestOutputOptions;
-                    });
-                })
-                .catch(error => {
-                    if (feedbackBox) {
-                        feedbackBox.textContent = '❌ AJAX error: ' + error.message;
-                        feedbackBox.style.color = 'red';
-                    }
-                    console.error(error);
-                });
+    function processCurrentZipFromPicker() {
+        // Essaie l\'ID standard du filepicker créé par MoodleQuickForm (adapter si thème diffère)
+        var link = document.querySelector("#id_zipfile_filepicker .filepicker-filename a");
+        if (!link) {
+            // fallback : chercher n\'importe quel lien de filename dans le fitem du zipfile
+            var fitem = document.getElementById("fitem_id_zipfile") || document;
+            link = fitem.querySelector(".filepicker-filename a");
         }
-    }, 1000); // Vérifie toutes les secondes jusqu’à ce que le fichier zip soit là
 
-    // ✅ Ajouter les astérisques rouges aux champs obligatoires
-    const requiredFields = [
-        'new_code', 'new_name', 'new_description', 'new_points',
-        'new_types[]', 'new_languages[]'
-    ];
+        if (!link || !/\\.zip(\\?|$)/i.test(link.href)) {
+            latestInputOptions = "";
+            latestOutputOptions = "";
+            updateAllSelects();
+            if (feedbackBox) feedbackBox.textContent = "";
+            return;
+        }
 
-    requiredFields.forEach(name => {
-        const input = document.querySelector('[name=\"' + name + '\"]');
+        // cache-buster pour éviter un blob mis en cache
+        var fileUrl = link.href + (link.href.indexOf("?") >= 0 ? "&" : "?") + "t=" + Date.now();
+        var fileName = link.textContent || "testcases.zip";
+
+        fetch(fileUrl, { cache: "no-store" })
+            .then(function (res) { return res.blob(); })
+            .then(function (blob) { return parseZipBlob(blob, fileName); });
+    }
+
+    // Observe les changements (ajout/remplacement/suppression) du filepicker
+    (function initZipObserver() {
+        var fpContainer = document.querySelector("#id_zipfile_filepicker");
+        if (!fpContainer) {
+            // fallback : le conteneur fitem
+            fpContainer = document.getElementById("fitem_id_zipfile");
+        }
+        if (!fpContainer) {
+            // dernier fallback : le document complet (moins optimal)
+            fpContainer = document;
+        }
+
+        var target = fpContainer.querySelector(".filepicker-filename") || fpContainer;
+        var observer = new MutationObserver(function () { processCurrentZipFromPicker(); });
+        observer.observe(target, { childList: true, subtree: true, characterData: true });
+
+        // premier essai si un ZIP est déjà présent
+        processCurrentZipFromPicker();
+    })();
+
+    // Astérisques pour champs requis (sans optional chaining)
+    var requiredFields = ["new_code", "new_name", "new_description", "new_types[]", "new_languages[]"];
+    for (var r = 0; r < requiredFields.length; r++) {
+        var input = document.querySelector("[name=\"" + requiredFields[r] + "\"]");
         if (input) {
-            const label = input.closest('.fitem')?.querySelector('label');
-            if (label && !label.innerHTML.includes('<abbr')) {
-                label.innerHTML += ' <abbr class=\"required\" title=\"required\">*</abbr>';
+            var fitem = input.closest(".fitem");
+            var label = fitem ? fitem.querySelector("label") : null;
+            if (label && label.innerHTML.indexOf("<abbr") === -1) {
+                label.innerHTML += " <abbr class=\"required\" title=\"required\">*</abbr>";
             }
         }
-    });
+    }
 });
-");
-
-
+');
 
 
     }

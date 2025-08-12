@@ -115,24 +115,20 @@ class qtype_programming_renderer extends qtype_renderer
         $params = ['attemptid' => $attemptid];
         $record = $DB->get_record_sql($sql, $params);
 
-        // 💡 Load CodeMirror only once
-        if (!defined('QTYPE_PROGRAMMING_CODEMIRROR_LOADED')) {
-            define('QTYPE_PROGRAMMING_CODEMIRROR_LOADED', true);
+        // 💡 Load CodeMirror core only once
 
 
-            $output = '';
 
-
+// ✅ Appelé TOUJOURS (même si CodeMirror déjà chargé) :
             $PAGE->requires->js_call_amd('qtype_programming/codemirror_loader', 'init', [
                 $editorid,
-                strtolower($languages[0]['name'] ?? 'text'),  // ex: 'cpp17', 'python3'
+                strtolower($languages[0]['name'] ?? 'text'),
                 'material-darker',
                 $themebtnid,
-                $selectid  // ID du <select> pour écouter les changements
+                null
             ]);
 
-
-            // 📦 Load JavaScript for submission handler
+// ✅ Appelé TOUJOURS :
             $PAGE->requires->js_call_amd('qtype_programming/submission', 'init', [[
                 'inputId' => $editorid,
                 'selectId' => $selectid,
@@ -152,24 +148,24 @@ class qtype_programming_renderer extends qtype_renderer
                 'attemptid' => $attemptid,
             ]]);
 
-            // 🖥️ Render the HTML using the Mustache template
-            return $output . $this->render_from_template('qtype_programming/renderer', [
-                    'problemcode' => $problemcode,
-                    'name' => $name,
-                    'description' => format_text($description, FORMAT_MARKDOWN),
-                    'inputname' => $inputname,
-                    'editorid' => $editorid,
-                    'selectId' => $selectid,
-                    'submitButtonId' => $submitbuttonid,
-                    'themeButtonId' => $themebtnid,
-                    'resultContainerId' => $resultcontainerid,
-                    'showSubmissionsButtonId' => 'showsubmissionsbtn_' . $slot,
-                    'submissionListContainerId' => 'submissionlist_' . $slot,
-                    'answer' => $answer,
-                    'languages' => $languages,
-                    'submissionidname' => $qa->get_qt_field_name('submission_id'),
-                    'submissionid' => $response['submission_id'] ?? ''
-                ]);
+// ✅ Ensuite, seulement maintenant on fait le return :
+            return $this->render_from_template('qtype_programming/renderer', [
+                'problemcode' => $problemcode,
+                'name' => $name,
+                'description' => format_text($description, FORMAT_MARKDOWN),
+                'inputname' => $inputname,
+                'editorid' => $editorid,
+                'selectId' => $selectid,
+                'submitButtonId' => $submitbuttonid,
+                'themeButtonId' => $themebtnid,
+                'resultContainerId' => $resultcontainerid,
+                'showSubmissionsButtonId' => 'showsubmissionsbtn_' . $slot,
+                'submissionListContainerId' => 'submissionlist_' . $slot,
+                'answer' => $answer,
+                'languages' => $languages,
+                'submissionidname' => $qa->get_qt_field_name('submission_id'),
+                'submissionid' => $response['submission_id'] ?? ''
+            ]);
+
         }
-    }
 }

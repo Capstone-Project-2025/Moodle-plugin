@@ -1,62 +1,29 @@
 <?php
 defined('MOODLE_INTERNAL') || die();
 
-/**
- * Upgrade script for the programming question type plugin.
- *
- * @param int $oldversion The version we are upgrading from.
- * @return bool
- */
 function xmldb_qtype_programming_upgrade($oldversion) {
     global $DB;
 
     $dbman = $DB->get_manager();
 
-    if ($oldversion < 2025070205) {
+    if ($oldversion < 2025070209) {
 
-        // === Create qtype_programming_options table ===
-        /*
-        $table = new xmldb_table('qtype_programming_options');
-
-        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
-        $table->add_field('questionid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
-        $table->add_field('problem_id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
-
-        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
-        $table->add_key('questionidfk', XMLDB_KEY_FOREIGN, ['questionid'], 'question', ['id']);
-        $table->add_key('problemidfk', XMLDB_KEY_FOREIGN, ['problem_id'], 'programming_problem', ['id']);
-
-        if (!$dbman->table_exists($table)) {
-            $dbman->create_table($table);
-        }
-        */
-        // === Create qtype_programming_submission table ===
         $table = new xmldb_table('qtype_programming_submission');
 
-        $table->add_field('submission_id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
-        $table->add_field('question_id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
-        $table->add_field('user_id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
-        $table->add_field('result', XMLDB_TYPE_CHAR, '30', null, XMLDB_NOTNULL);
-        $table->add_field('point', XMLDB_TYPE_NUMBER, '10,2', null, XMLDB_NOTNULL);
-        $table->add_field('total_point', XMLDB_TYPE_NUMBER, '10,2', null, XMLDB_NOTNULL);
-
-        $table->add_field('language_id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
-        $table->add_field('course_id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL);
-        $table->add_field('code', XMLDB_TYPE_TEXT, null, null, XMLDB_NOTNULL);
-  
-        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['submission_id']);
-        $table->add_key('questionfk', XMLDB_KEY_FOREIGN, ['question_id'], 'qtype_programming_options', ['id']);
-        $table->add_key('languagefk', XMLDB_KEY_FOREIGN, ['language_id'], 'programming_language', ['id']);
-        $table->add_key('userfk', XMLDB_KEY_FOREIGN, ['user_id'], 'user', ['id']);
-        $table->add_key('coursefk', XMLDB_KEY_FOREIGN, ['course_id'], 'course', ['id']);
-
-
-        if (!$dbman->table_exists($table)) {
-            $dbman->create_table($table);
+        $field = new xmldb_field('attempt_id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, null, null, 0);
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
         }
 
-        // === Savepoint unique ===
-        upgrade_plugin_savepoint(true, 2025070205, 'qtype', 'programming');
+        $DB->set_field_select('qtype_programming_submission', 'attempt_id', 0, 'attempt_id IS NULL');
+
+        $fielddefault = new xmldb_field('attempt_id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, null, null, 0);
+        $dbman->change_field_default($table, $fielddefault);
+
+        $fieldnotnull = new xmldb_field('attempt_id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, 0);
+        $dbman->change_field_notnull($table, $fieldnotnull);
+
+        upgrade_plugin_savepoint(true, 2025070209, 'qtype', 'programming');
     }
 
     return true;
