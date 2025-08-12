@@ -15,6 +15,8 @@ define('DBNAME', "moodle40");
 
 class mod_dmojorganize_observer {
     public static function user_enrolment_created(\core\event\base $event) {
+        // "Add a new user/upload users" from Site administration trigger this event
+        // instead of "user_created" event
         $data = $event->get_data();
 
         $userid = $data['relateduserid']; // the user who was added
@@ -24,6 +26,51 @@ class mod_dmojorganize_observer {
         debugging("User added to course", DEBUG_DEVELOPER);
         debugging("User $userid added to course $courseid", DEBUG_DEVELOPER);
         //echo("User $userid added to course $courseid");
+    }
+    public static function user_created(\core\event\base $event) {
+        // API request portion
+        $data = $event->get_data();
+        $newuserid = $data['objectid'];
+        $user = $event->get_record_snapshot('user', $newuserid);
+
+        $username = $user->username;
+        $email = $user->email;
+        $firstname = $user->firstname;
+        $lastname = $user->lastname;
+
+        $data = $event->get_data();
+
+        $key = "1";
+        $payload = [
+            $key => [
+                "username" => $username,
+                "email" => $email,
+                "first_name" => $firstname,
+                "last_name" => $lastname
+            ]
+        ];
+        $force_create_DMOJ_user = new ForceCreateDMOJUser($payload);
+        $response = $force_create_DMOJ_user->run();
+        $response['body'] = json_decode($response['body'], true);
+        //echo "Force create response: <br> <pre>" . json_encode($response, JSON_PRETTY_PRINT) . "</pre>";
+
+        //debugging("User created", DEBUG_DEVELOPER);
+        //debugging(print_r($data, true), DEBUG_DEVELOPER);
+
+        // Moodle database modification portion
+        $dmoj_uid = $response["body"]["success"][$key]["dmoj_uid"];
+
+        $conn = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
+
+        if ($conn->connect_error) {
+            die("Connection failed: " . $conn->connect_error);
+        }
+
+        $stmt = $conn->prepare("INSERT INTO mdl_dmojusers (moodle_user_id, dmoj_user_id) VALUES (?, ?)");
+        $stmt->bind_param("ii", $newuserid, $dmoj_uid);
+        $stmt->execute();
+        $stmt->close();
+        $conn->close();
     }
 
     private static function do_something_when_user_added(int $userid, int $courseid): void {
