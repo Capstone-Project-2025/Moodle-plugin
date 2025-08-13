@@ -80,6 +80,8 @@ class mod_dmojorganize_observer {
         error_log('A new user was enrolled!');
     }
     public static function course_created(\core\event\base $event) {
+        // Doesn't work on server, placeholder code based on Postman results only
+        // API request portion
         $data = $event->get_data();
 
         $courseid = $data['courseid'];
@@ -111,6 +113,21 @@ class mod_dmojorganize_observer {
         debugging("Status code of organization creation: $status_code");
         echo "<pre>" . json_encode($response["body"], JSON_PRETTY_PRINT) . "</pre>";
 
+        // Moodle database modification portion
+        $dmoj_orgid = $response["body"]["success"]["id"];
+
+        $conn = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
+
+        if ($conn->connect_error) {
+            die("Connection failed: " . $conn->connect_error);
+        }
+
+        $stmt = $conn->prepare("INSERT INTO mdl_dmojorganize (course_id, organization_id) VALUES (?, ?)");
+        $stmt->bind_param("ii", $courseid, $dmoj_orgid);
+        $stmt->execute();
+        $stmt->close();
+        $conn->close();
+        /*
         global $apiurl;
 
         $DMOJ_org_info = new GetAllDMOJOrganizations();
@@ -139,6 +156,7 @@ class mod_dmojorganize_observer {
         $stmt->execute();
         $stmt->close();
         $conn->close();
+        */
     }
     public static function course_updated(\core\event\base $event) {
         $data = $event->get_data();
