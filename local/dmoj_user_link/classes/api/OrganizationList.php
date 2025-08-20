@@ -10,7 +10,7 @@ class OrganizationList extends APIRequest {
      * Retrieves the list of organizations.
      */
     public function get($params = []) {
-        $this->url = config::DOMAIN . "/api/v2/organizations";
+        $this->url = get_dmoj_domain() . "/api/v2/organizations";
         $this->method = "GET";
         $this->headers = ['Accept' => 'application/json'];
         $this->params = $params;
@@ -23,7 +23,7 @@ class OrganizationList extends APIRequest {
      * Creates a new organization (if the user has permission).
      */
     public function create(array $orgdata) {
-        $this->url = config::DOMAIN . "/api/v2/organizations";
+        $this->url = get_dmoj_domain() . "/api/v2/organizations";
         $this->method = "POST";
         $this->headers = ['Content-Type' => 'application/json'];
         $this->payload = $orgdata;

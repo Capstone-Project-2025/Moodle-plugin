@@ -27,7 +27,9 @@ use MongoDB\Operation\Delete;
 require_once(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/classes/sql.php');
 require_once(__DIR__ . '/classes/api/requests_to_dmoj.php');
-function link_dmoj($user_id = null) {
+
+// link all admins or users in a specific course
+function link_dmoj($course_id = null) {
     // Require login and admin privileges
     require_login();
     require_admin();
@@ -35,10 +37,12 @@ function link_dmoj($user_id = null) {
     global $DB;
 
     $payload = [];
-    if (!$user_id) {
-        $users = get_all_users();
+    $is_admin = 0;
+    if (!$course_id) {
+        $users = \local_dmoj_user_link\get_all_admins();
+        $is_admin = 1;
     } else {
-        $users = [$user_id => $DB->get_record('user', ['id' => $user_id])];
+        $users = \local_dmoj_user_link\get_users_and_roles_in_course($course_id);
     }
 
     foreach ($users as $id => $user) {
@@ -47,16 +51,17 @@ function link_dmoj($user_id = null) {
             'email' => $user->email,
             'first_name' => $user->firstname,
             'last_name' => $user->lastname,
+            'is_admin' => $is_admin,
         ];
     }
     debugging("Linking DMOJ for users: " . json_encode($payload));
 
     // send request to force create DMOJ account
     $request = new local_dmoj_user_link\api\ForceCreateDMOJAccount($payload);
-    $response = $request->run();
+    $response = $request->send();
 
     // get the response and save to db
-    $data = json_decode($response['body'], true);
+    $data = $response['body'];
         
     // Handle successful user links
     if (!empty($data['success'])) {
@@ -64,12 +69,15 @@ function link_dmoj($user_id = null) {
             $insertdata = new stdClass();
             $insertdata->moodle_user_id = (int)$moodleid;
             $insertdata->dmoj_user_id = $userinfo['dmoj_uid'];
+            $insertdata->dmoj_user_profile_id = $userinfo['dmoj_profile_uid'] ?? 0;
 
             // Save to database
             $DB->insert_record('myplugin_dmoj_users', $insertdata);
             debugging("DMOJ user linked: moodleid = {$moodleid}, dmojuid = {$userinfo['dmoj_uid']}", DEBUG_DEVELOPER);
         }
     }
+
+    return $response;
 }
 
 function unlink_dmoj($user_id = null) {
@@ -80,7 +88,8 @@ function unlink_dmoj($user_id = null) {
     global $DB;
 
     if (!$user_id) {
-        $allusers = get_all_users();
+        # Get all users and admins
+        $allusers = array_merge(\local_dmoj_user_link\get_all_users(), \local_dmoj_user_link\get_all_admins());
         $users = [];
         foreach ($allusers as $user) {
             $users[$user->id] = $user;

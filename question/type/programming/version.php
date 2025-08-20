@@ -7,6 +7,6 @@ $plugin->requires = 2021051700;
 $plugin->maturity = MATURITY_ALPHA;
 $plugin->release = 'v1.0';
 $plugin->dependencies = [
-    'local_dmoj_user_link' => ANY_VERSION,
+    //'local_dmoj_user_link' => ANY_VERSION,
 ];
 

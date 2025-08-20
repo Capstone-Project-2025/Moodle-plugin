@@ -9,7 +9,7 @@ class ProblemSubmission extends APIRequest {
      * Submit code for a given problem.
      */
     public function submit(string $problemcode, string $sourcecode, int $languageid, string $judge = '') {
-        $url = config::DOMAIN . "/api/v2/problem/{$problemcode}/submit";
+        $url = get_dmoj_domain() . "/api/v2/problem/{$problemcode}/submit";
         $payload = [
             "source" => $sourcecode,
             "language" => $languageid,
@@ -28,7 +28,7 @@ class ProblemSubmission extends APIRequest {
      * Get the results of a submission.
      */
     public function get_result(int $submissionid) {
-        $url = config::DOMAIN . "/api/v2/submission/{$submissionid}";
+        $url = get_dmoj_domain() . "/api/v2/submission/{$submissionid}";
 
         $this->url = $url;
         $this->method = "GET";
@@ -41,7 +41,7 @@ class ProblemSubmission extends APIRequest {
      * Static method to fetch a submission result by ID.
      */
     public static function fetch_submission_result($submissionid) {
-        $url = config::DOMAIN . "/api/v2/submission/" . $submissionid;
+        $url = get_dmoj_domain() . "/api/v2/submission/" . $submissionid;
         $method = "GET";
         $request = new self($url, $method);
         return $request->run();
@@ -51,7 +51,7 @@ class ProblemSubmission extends APIRequest {
      * Static method to get a submission by ID.
      */
     public static function get_by_id(int $submissionid): array {
-        $url = config::DOMAIN . "/api/v2/submission/" . $submissionid;
+        $url = get_dmoj_domain() . "/api/v2/submission/" . $submissionid;
         $method = "GET";
         $request = new self($url, $method);
         return $request->run(); // returns ['status' => ..., 'body' => ..., 'error' => ...]

@@ -9,6 +9,8 @@ class APIRequest {
     protected array $headers;
     protected array $params;
     protected array $payload;
+    protected string $access_token_url;
+    protected string $refresh_token_url;
 
     protected static array $tokens = [];
 
@@ -18,6 +20,8 @@ class APIRequest {
         $this->headers = $headers;
         $this->params = $params;
         $this->payload = $payload;
+        $this->access_token_url = get_dmoj_domain() . '/api/token/';
+        $this->refresh_token_url = get_dmoj_domain() . '/api/token/refresh/';
     }
 
     public function run(): array {
@@ -55,7 +59,7 @@ class APIRequest {
             "uid" => $USER->id
         ];
 
-        $response = $this->curlRequest(config::ACCESS_TOKEN_URL, 'POST', $payload);
+        $response = $this->curlRequest($this->access_token_url, 'POST', $payload);
 
         if ($response['status'] === 200 && isset($response['body']['access'], $response['body']['refresh'])) {
             self::$tokens = [
@@ -69,7 +73,7 @@ class APIRequest {
 
     protected function refreshToken(): void {
         $payload = ["refresh" => self::$tokens["refresh_token"]];
-        $response = $this->curlRequest(config::REFRESH_TOKEN_URL, 'POST', $payload);
+        $response = $this->curlRequest($this->refresh_token_url, 'POST', $payload);
 
         if ($response['status'] === 200 && isset($response['body']['access'], $response['body']['refresh'])) {
             self::$tokens = [
@@ -126,12 +130,13 @@ class APIRequest {
         return false;
     }
 
-    protected function send(): array {
+    public function send(): array {
         $fullurl = $this->url;
         if (!empty($this->params)) {
             $query = http_build_query($this->params);
             $fullurl .= (strpos($this->url, '?') === false ? '?' : '&') . $query;
         }
+        $fullurl = html_entity_decode($fullurl, ENT_QUOTES | ENT_HTML5);
 
         $ch = curl_init($fullurl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

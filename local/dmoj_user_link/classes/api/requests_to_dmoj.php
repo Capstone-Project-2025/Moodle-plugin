@@ -60,7 +60,10 @@ class GetUserDMOJId extends APIRequest {
             "provider" => "moodle",
             "id" => $ids,
         ];
-        parent::__construct($url, $method, [], [], $payload);
+        $header = [
+            'Content-Type' => 'application/json'
+        ];
+        parent::__construct($url, $method, $header, [], $payload);
     }
 }
 
@@ -68,7 +71,10 @@ class ForceCreateDMOJAccount extends APIRequest {
     public function __construct($payload = []) {
         $url = get_dmoj_domain() . "/api/v2/users/create";
         $method = "POST";
-        parent::__construct($url, $method, [], [], $payload);
+        $header = [
+            'Content-Type' => 'application/json'
+        ];
+        parent::__construct($url, $method, $header, [], $payload);
     }
 }
 
@@ -76,6 +82,31 @@ class DeleteDMOJAccount extends APIRequest {
     public function __construct($params = []) {
         $url = get_dmoj_domain() . "/api/v2/users/create";
         $method = "DELETE";
-        parent::__construct($url, $method, [], $params, []);
+        $header = [
+            'Content-Type' => 'application/json'
+        ];
+        parent::__construct($url, $method, $header, $params, []);
+    }
+}
+
+class CreateOrg extends APIRequest {
+    public function __construct($payload = []) {
+        $url = get_dmoj_domain() . "/api/v2/organizations";
+        $method = "POST";
+        $header = [
+            'Content-Type' => 'application/json'
+        ];
+        parent::__construct($url, $method, $header, [], $payload);
+    }
+}
+
+class DeleteOrg extends APIRequest {
+    public function __construct($orgId) {
+        $url = get_dmoj_domain() . "/api/v2/organization/$orgId";
+        $method = "DELETE";
+        $header = [
+            'Content-Type' => 'application/json'
+        ];
+        parent::__construct($url, $method, $header);
     }
 }

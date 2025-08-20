@@ -19,7 +19,7 @@ class OrganizationDetail extends APIRequest {
      * Retrieves details of an organization.
      */
     public function get() {
-        $this->url = config::DOMAIN . "/api/v2/organization/{$this->orgid}";
+        $this->url = get_dmoj_domain() . "/api/v2/organization/{$this->orgid}";
         $this->method = "GET";
         $this->headers = ['Accept' => 'application/json'];
 
@@ -31,7 +31,7 @@ class OrganizationDetail extends APIRequest {
      * Updates an organization's details.
      */
     public function update(array $orgdata) {
-        $this->url = config::DOMAIN . "/api/v2/organization/{$this->orgid}";
+        $this->url = get_dmoj_domain() . "/api/v2/organization/{$this->orgid}";
         $this->method = "PUT";
         $this->headers = ['Content-Type' => 'application/json'];
         $this->payload = $orgdata;
@@ -44,7 +44,7 @@ class OrganizationDetail extends APIRequest {
      * Deletes an organization.
      */
     public function delete() {
-        $this->url = config::DOMAIN . "/api/v2/organization/{$this->orgid}";
+        $this->url = get_dmoj_domain() . "/api/v2/organization/{$this->orgid}";
         $this->method = "DELETE";
         $this->headers = ['Accept' => 'application/json'];
 

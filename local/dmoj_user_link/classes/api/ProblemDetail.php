@@ -9,7 +9,7 @@ class ProblemDetail extends APIRequest {
 
     public function __construct(string $problemcode) {
         $this->problemcode = $problemcode;
-        $url = config::DOMAIN . "/api/v2/problem/" . $problemcode;
+        $url = get_dmoj_domain() . "/api/v2/problem/" . $problemcode;
         parent::__construct($url, "GET", ['Accept' => 'application/json']);
     }
 

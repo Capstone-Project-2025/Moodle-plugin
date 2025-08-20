@@ -23,32 +23,36 @@
  */
 require_once(__DIR__ . '/classes/setting_update.php');
 
+defined('MOODLE_INTERNAL') || die();
+
 // Ensure the configurations for this site are set
 if ($hassiteconfig) {
 
     // Create the new settings page
     // - in a local plugin this is not defined as standard, so normal $settings->methods will throw an error as
     // $settings will be null
-    $settings = new admin_settingpage('local_myplugin', 'Your Settings Page Title');
+    $settings = new admin_settingpage('local_dmoj_user_link', 'Capstone project settings');
 
     // Create
     $ADMIN->add('localplugins', $settings);
 
     // Add a setting field to the settings for this page
-    $settings->add(new admin_setting_configtext_notify(
-    // This is the reference you will use to your configuration
-        'local_myplugin/dmoj_domain',
+    if ($ADMIN->fulltree) {
+        $settings->add(new admin_setting_configtext_notify(
+            // This is the reference you will use to your configuration
+                'local_dmoj_user_link/dmoj_domain',
 
-        // This is the friendly title for the config, which will be displayed
-        'DMOJ Domain',
+            // This is the friendly title for the config, which will be displayed
+            'DMOJ Domain',
 
-        // This is helper text for this config field
-        'Helper text',
+            // This is helper text for this config field
+            'Helper text',
 
-        // This is the default value
-        'http://example.com',
+            // This is the default value
+            'http://example.com',
 
-        // This is the type of Parameter this config is
-        PARAM_URL
-    ));
+            // This is the type of Parameter this config is
+            PARAM_URL
+        ));
+    }
 }
