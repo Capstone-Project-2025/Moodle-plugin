@@ -1,5 +1,7 @@
 /*
 !.gitignore
 !/question/
+/question/*
 !/question/type/
+/question/type/*
 !/question/type/programming/
