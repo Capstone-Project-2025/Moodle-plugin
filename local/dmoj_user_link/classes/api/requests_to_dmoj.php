@@ -100,6 +100,17 @@ class CreateOrg extends APIRequest {
     }
 }
 
+class UpdateOrg extends APIRequest {
+    public function __construct($orgId, $payload = []) {
+        $url = get_dmoj_domain() . "/api/v2/organization/$orgId";
+        $method = "PUT";
+        $header = [
+            'Content-Type' => 'application/json'
+        ];
+        parent::__construct($url, $method, $header, [], $payload);
+    }
+}
+
 class DeleteOrg extends APIRequest {
     public function __construct($orgId) {
         $url = get_dmoj_domain() . "/api/v2/organization/$orgId";

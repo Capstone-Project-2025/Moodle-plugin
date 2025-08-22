@@ -23,8 +23,14 @@ class local_dmoj_user_link_observer {
         }
     }
 
-    public static function create_org_and_course_user_with_dmoj(\core\event\base $event) {
+    public static function course_org_syncing(\core\event\base $event) {
+        global $DB;
         $courseid = $event->courseid;
+
+        // event might not have courseid
+        if (empty($courseid)) {
+            return;
+        }
 
         // try linking course users
         try {
@@ -54,9 +60,18 @@ class local_dmoj_user_link_observer {
                     "admins" => array_map(fn($user) => $user->dmojuserid, $admins)
                 ];
                 debugging("Creating DMOJ org with payload: " . json_encode($payload));
-                if($DB->get_records('myplugin_course_org_link', ['course_id' => $courseid])) {
+                $org = $DB->get_record('myplugin_course_org_link', ['course_id' => $courseid]);
+                if ($org) {
                     // \core\notification::add('DMOJ org already exists for this course', \core\output\notification::NOTIFY_INFO);
-                    return;
+                    // if the org exists update it
+                    $request = new \local_dmoj_user_link\api\UpdateOrg($org->dmoj_org_id, $payload);
+                    $response = $request->run();
+                    $body = $response['body'];
+                    if ($response['status'] == 200) {
+                        \core\notification::add('DMOJ org updated successfully', \core\output\notification::NOTIFY_SUCCESS);
+                    } else {
+                        \core\notification::add('DMOJ org update failed. Status: ' . $response['status'] . ' Body: ' . json_encode($body), \core\output\notification::NOTIFY_ERROR);
+                    }
                 } else {
                     // if the org that match course doesn't exist create it
                     $request = new \local_dmoj_user_link\api\CreateOrg($payload);

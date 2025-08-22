@@ -1,4 +1,7 @@
 <?php
+
+defined('MOODLE_INTERNAL') || die();
+
 $observers = [
     [
         'eventname' => '\local_dmoj_user_link\event\before_setting_updated',
@@ -10,6 +13,22 @@ $observers = [
     ],
     [
         'eventname' => '\mod_progcontest\event\progcontest_first_created',
-        'callback'  => 'local_dmoj_user_link_observer::create_org_and_course_user_with_dmoj',
-    ]
+        'callback'  => 'local_dmoj_user_link_observer::course_org_syncing',
+    ],
+    [
+        'eventname' => '\core\event\user_enrolment_created',
+        'callback'  => 'local_dmoj_user_link_observer::course_org_syncing',
+    ],
+    [
+        'eventname' => '\core\event\user_enrolment_deleted',
+        'callback'  => 'local_dmoj_user_link_observer::course_org_syncing',
+    ],
+    [
+        'eventname' => '\core\event\role_assigned',
+        'callback'  => 'local_dmoj_user_link_observer::course_org_syncing',
+    ],
+    [
+        'eventname' => '\core\event\role_unassigned',
+        'callback'  => 'local_dmoj_user_link_observer::course_org_syncing',
+    ],
 ];
