@@ -182,7 +182,7 @@ define('qtype_programming/submission', ['jquery'], function($) {
                                 return;
                             }
 
-                            let html = '<h4>Your Submissions</h4><ul style="padding-left:1.2em;">';
+                            let html = '<h4>Your Submissions</h4><ul style="max-height: 200px; overflow-y: auto; padding-left:1.2em;">';
                             data.submissions.forEach(sub => {
                                 const safeSource = $('<div>').text(sub.source_code ?? '').html();
                                 html += `
