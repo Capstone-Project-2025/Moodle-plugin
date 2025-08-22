@@ -100,13 +100,16 @@ function progcontest_add_instance($progcontest) {
             'firstslot' => 1, 'heading' => '', 'shufflequestions' => 0));
 
     // first time created in course event
+    $courseid = $progcontest->course;
     $context = \context_module::instance($cmid);
-    $event = \mod_progcontest\event\progcontest_first_created::create(array(
-        'objectid' => $progcontest->id,
-        'context'  => $context,
-        'courseid' => $progcontest->course, // add courseid
-        'userid'   => $USER->id,
-    ));
+    if ($DB->get_records('myplugin_course_org_link', ['course_id' => $courseid])) {
+        $event = \mod_progcontest\event\progcontest_first_created::create(array(
+            'objectid' => $progcontest->id,
+            'context'  => $context,
+            'courseid' => $courseid,
+            'userid'   => $USER->id,
+        ));
+    }
     $event->trigger();
 
     // Do the processing required after an add or an update.
