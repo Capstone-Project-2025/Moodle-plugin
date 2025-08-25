@@ -4,7 +4,7 @@ defined('MOODLE_INTERNAL') || die();
 /**
  * Upgrade script for local_dmoj_user_link plugin
  */
-function xmldb_local_dmoj_user_linkupgrade($oldversion) {
+function xmldb_local_dmoj_user_link_upgrade($oldversion) {
     global $DB;
 
     // Update step to create all missing tables from install.xml (version bump to 2025061904)
