@@ -16,6 +16,16 @@ function get_all_users() {
 
 function get_all_admins() {
     return get_admins();
+
+    $result = [];
+    foreach ($admins as $admin) {
+        $obj = clone $admin;
+        $obj->userid = $obj->id;
+        unset($obj->id);
+        $result[$obj->userid] = $obj;
+    }
+
+    return $result;
 }
 
 // Get all users and their roles in a specific course
