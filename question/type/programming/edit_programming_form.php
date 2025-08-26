@@ -1,4 +1,5 @@
 <?php
+define('PROBLEM_CODE_CHAR_LIMIT', 20);
 
 defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot . '/question/type/edit_question_form.php');
@@ -42,8 +43,9 @@ class qtype_programming_edit_form extends question_edit_form {
         // === NEW PROBLEM ===
         $mform->addElement('header', 'new_problem_section', 'Create New Problem');
 
-        $mform->addElement('text', 'new_code', 'Problem Code');
+        $mform->addElement('text', 'new_code', 'Problem Code', ['maxlength' => PROBLEM_CODE_CHAR_LIMIT]);
         $mform->setType('new_code', PARAM_TEXT);
+        $mform->addRule('new_code', get_string('maximumchars', '', PROBLEM_CODE_CHAR_LIMIT), 'maxlength', PROBLEM_CODE_CHAR_LIMIT, 'server');
 
         $mform->addElement('text', 'new_name', 'Problem Name');
         $mform->setType('new_name', PARAM_TEXT);
