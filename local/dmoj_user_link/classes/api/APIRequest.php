@@ -67,8 +67,7 @@ class APIRequest {
                 'refresh_token' => $response['body']['refresh']
             ];
         } else {
-            throw new \Exception("Access token fetch failed: HTTP {$response['status']}");
-        }
+            throw new \Exception("The DMOJ server is currently unavailable. Please try again later.");        }
     }
 
     protected function refreshToken(): void {
@@ -81,8 +80,7 @@ class APIRequest {
                 'refresh_token' => $response['body']['refresh']
             ];
         } else {
-            throw new \Exception("Token refresh failed: HTTP {$response['status']}");
-        }
+            throw new \Exception("The DMOJ server is currently unavailable. Please try again later.");        }
     }
 
     protected function clearTokens(): void {
@@ -169,10 +167,30 @@ class APIRequest {
         $error = curl_error($ch);
         curl_close($ch);
 
+        $decodedBody = json_decode($body, true);
+
+        $semanticError = null;
+        if (is_array($decodedBody)) {
+            $semanticError = $this->extract_first_error($decodedBody);
+        }
+
         return [
             'status' => $status,
-            'body' => json_decode($body, true),
-            'error' => $error ?: null
+            'body' => $decodedBody,
+            'error' => $semanticError ?: ($error ?: null)
         ];
+    }
+
+
+
+    protected function extract_first_error(array $body): ?string {
+        foreach ($body as $field => $messages) {
+            if (is_array($messages) && !empty($messages)) {
+                return $messages[0]; // ex: "Trường này không được bỏ trống."
+            } elseif (is_string($messages)) {
+                return $messages;
+            }
+        }
+        return null;
     }
 }

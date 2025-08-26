@@ -82,6 +82,14 @@ $string['answersingleyes'] = 'One answer only';
 $string['answertoolong'] = 'Answer too long after line {$a} (255 char. max)';
 $string['anytags'] = 'Any tags';
 $string['aon'] = 'AON format';
+$string['apiproblemslink'] = 'Programming Problems';
+$string['uploadproblem'] = 'Upload a new problem';
+$string['uploadsuccess'] = '✅ Problem successfully uploaded!';
+$string['easy'] = 'Easy';
+$string['medium'] = 'Medium';
+$string['hard'] = 'Hard';
+$string['back'] = 'Back';
+$string['progconteststats'] = 'Programming stats';
 $string['areyousureremoveselected'] = 'Are you sure you want to remove all the selected questions?';
 $string['asshownoneditscreen'] = 'As shown on the edit screen';
 $string['attempt'] = 'Attempt {$a}';
@@ -503,7 +511,7 @@ $string['minutes'] = 'Minutes';
 $string['missingcorrectanswer'] = 'Correct answer must be specified';
 $string['missingitemtypename'] = 'Missing name';
 $string['missingquestion'] = 'This question no longer seems to exist';
-$string['modulename'] = 'Programmingcontest';
+$string['modulename'] = 'Programming contest';
 $string['modulename_help'] = 'The progcontest activity enables a teacher to create progcontestzes comprising questions of various types, including multiple choice, matching, short-answer and numerical.
 
 The teacher can allow the progcontest to be attempted multiple times, with the questions shuffled or randomly selected from the question bank. A time limit may be set.

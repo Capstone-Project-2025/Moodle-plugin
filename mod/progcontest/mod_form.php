@@ -366,7 +366,7 @@ class mod_progcontest_mod_form extends moodleform_mod {
         $this->apply_admin_defaults();
         $this->add_action_buttons();
 
-        $PAGE->requires->yui_module('moodle-mod_quiz-modform', 'M.mod_quiz.modform.init');
+        $PAGE->requires->yui_module('moodle-mod_progcontest-modform', 'M.mod_progcontest.modform.init');
     }
 
     protected function add_review_options_group($mform, $progcontestconfig, $whenname,
