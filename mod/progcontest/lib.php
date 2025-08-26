@@ -82,7 +82,7 @@ require_once(__DIR__ . '/deprecatedlib.php');
  *          false or a string error message on failure.
  */
 function progcontest_add_instance($progcontest) {
-    global $DB;
+    global $DB, $USER;
     $cmid = $progcontest->coursemodule;
 
     // Process the options from the form.
@@ -98,6 +98,19 @@ function progcontest_add_instance($progcontest) {
     // Create the first section for this progcontest.
     $DB->insert_record('progcontest_sections', array('progcontestid' => $progcontest->id,
             'firstslot' => 1, 'heading' => '', 'shufflequestions' => 0));
+
+    // first time created in course event
+    $courseid = $progcontest->course;
+    $context = \context_module::instance($cmid);
+    if (!$DB->get_records('myplugin_course_org_link', ['course_id' => $courseid])) {
+        $event = \mod_progcontest\event\progcontest_first_created::create(array(
+            'objectid' => $progcontest->id,
+            'context'  => $context,
+            'courseid' => $courseid,
+            'userid'   => $USER->id,
+        ));
+        $event->trigger();
+    }
 
     // Do the processing required after an add or an update.
     progcontest_after_add_or_update($progcontest);

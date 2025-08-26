@@ -8,11 +8,26 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true"/>
         <FIELD NAME="moodle_user_id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true"/>
         <FIELD NAME="dmoj_user_id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true"/>
+        <FIELD NAME="dmoj_user_profile_id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="user_dmoj_unique" TYPE="unique" FIELDS="moodle_user_id,dmoj_user_id"/>
+        <KEY NAME="user_dmoj_unique" TYPE="unique" FIELDS="moodle_user_id,dmoj_user_id,dmoj_user_profile_id"/>
         <KEY NAME="fk_user" TYPE="foreign" FIELDS="moodle_user_id" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <!-- DMOJ course organization links table -->
+    <TABLE NAME="myplugin_course_org_link" COMMENT="Table to store DMOJ course organization links">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true" SEQUENCE="true"/>
+        <FIELD NAME="course_id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true"/>
+        <FIELD NAME="dmoj_org_id" TYPE="int" LENGTH="10" NOTNULL="true" UNSIGNED="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="unique_course_dmoj_org" TYPE="unique" FIELDS="dmoj_org_id,course_id"/>
+        <KEY NAME="fk_course" TYPE="foreign" FIELDS="course_id" REFTABLE="course" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
 

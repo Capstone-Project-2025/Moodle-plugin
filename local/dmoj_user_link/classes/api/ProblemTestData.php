@@ -55,7 +55,7 @@ class ProblemTestData extends APIRequest {
      * Fetches the test data of a problem.
      */
     public function get(): array {
-        $this->url = config::DOMAIN . "/api/v2/problem/{$this->problemcode}/test_data";
+        $this->url = get_dmoj_domain() . "/api/v2/problem/{$this->problemcode}/test_data";
         $this->method = "GET";
         $this->headers = ['Accept' => 'application/json'];
 
@@ -67,7 +67,7 @@ class ProblemTestData extends APIRequest {
      * Updates the test data of a problem.
      */
     public function put(array $testdata): array {
-        $this->url = config::DOMAIN . "/api/v2/problem/{$this->problemcode}/test_data";
+        $this->url = get_dmoj_domain() . "/api/v2/problem/{$this->problemcode}/test_data";
         $this->method = "PUT";
 
         // Aplatir le tableau imbriqué pour cURL (multipart/form-data)

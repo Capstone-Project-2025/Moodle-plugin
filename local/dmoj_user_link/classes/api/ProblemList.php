@@ -10,7 +10,7 @@ class ProblemList extends APIRequest {
      */
     public function __construct(array $params = []) {
         parent::__construct(
-            config::DOMAIN . "/api/v2/problems",
+            get_dmoj_domain() . "/api/v2/problems",
             "GET",
             ['Accept' => 'application/json'],
             $params
@@ -36,7 +36,7 @@ class ProblemList extends APIRequest {
      */
     public static function create(array $probleminfo): array {
         $request = new APIRequest(
-            config::DOMAIN . "/api/v2/problems",
+            get_dmoj_domain() . "/api/v2/problems",
             "POST",
             ['Content-Type' => 'application/json'],
             [],
