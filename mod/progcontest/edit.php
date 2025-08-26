@@ -86,7 +86,7 @@ if (($addquestion = optional_param('addquestion', 0, PARAM_INT)) && confirm_sess
     $structure->check_can_be_edited();
 
     // 🛡️ Sécurité : autoriser uniquement certains types.
-    $allowedqtypes = ['truefalse', 'numerical', 'prog'];
+    $allowedqtypes = ['truefalse', 'numerical', 'programming'];
     $question = $DB->get_record('question', ['id' => $addquestion], '*', MUST_EXIST);
 
     if (!in_array($question->qtype, $allowedqtypes)) {

@@ -23,6 +23,31 @@ Y.extend(MODFORM, Y.Base, {
     qppInitialValue: 0,
 
     initializer: function() {
+        // Liste des sections à masquer (par leur ID).
+        var hiddenSectionIds = [
+            'id_layoutsection',                 // Layout
+            'id_interactionhdr',               // Question behaviour
+            'id_reviewoptionshdr',             // Review options
+            'id_display',                      // Apparence
+            'id_safeexambrowsersection',       // Safe Exam Browser
+            'id_overallfeedbackhdr',           // Overall feedback
+            'id_availabilityconditionsheader', // Restrict access
+            'id_competenciessection'           // Competencies
+        ];
+
+        hiddenSectionIds.forEach(function(id) {
+            var node = Y.one('#' + id);
+            if (node) {
+                var container = node.ancestor('.fcontainer');
+                if (container) {
+                    container.setStyle('display', 'none');
+                } else {
+                    node.setStyle('display', 'none'); // Fallback
+                }
+            }
+        });
+
+        // === Ancien comportement (repagination) ===
         this.repaginateCheckbox = Y.one('#id_repaginatenow');
         if (!this.repaginateCheckbox) {
             // The checkbox only appears when editing an existing progcontest.
@@ -41,7 +66,6 @@ Y.extend(MODFORM, Y.Base, {
             }
         });
     }
-
 });
 
 // Ensure that M.mod_progcontest exists and that coursebase is initialised correctly

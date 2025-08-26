@@ -1780,6 +1780,43 @@ function progcontest_extend_settings_navigation($settings, $progcontestnode) {
         }
     }
 
+    if (has_capability('mod/progcontest:manage', $PAGE->cm->context)) {
+        $cmid = $PAGE->cm->id;
+
+        $url = new moodle_url('/mod/progcontest/problems/programming_problem.php', ['id' => $cmid]);
+
+        $node = navigation_node::create(
+            get_string('apiproblemslink', 'progcontest'), // chaîne de langue
+            $url,
+            navigation_node::TYPE_SETTING,
+            null,
+            'mod_progcontest_apiproblems',
+            new pix_icon('i/settings', '')
+        );
+
+        $progcontestnode->add_node($node, $beforekey);
+    }
+
+    if (has_any_capability(['mod/progcontest:viewreports', 'mod/progcontest:grade'], $PAGE->cm->context)) {
+        // $reportnode = le nœud 'Results' que tu as déjà créé plus haut.
+        $cmid = $PAGE->cm->id;
+
+        $url = new moodle_url('/mod/progcontest/stats/index.php', [
+            'id'   => $cmid,
+        ]);
+
+        $node = navigation_node::create(
+            get_string('progconteststats', 'progcontest'), // texte
+            $url,                                          // URL
+            navigation_node::TYPE_SETTING,
+            null,
+            'mod_progcontest_stats',
+            new pix_icon('i/report', '')                   // icône Moodle (pas <i class="fa ...">)
+        );
+
+        $reportnode->add_node($node); // ou $progcontestnode->add_node(...) si hors "Results"
+    }
+
     question_extend_settings_navigation($progcontestnode, $PAGE->cm->context)->trim_if_empty();
 }
 

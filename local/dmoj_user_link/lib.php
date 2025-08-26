@@ -22,7 +22,7 @@ function local_dmoj_user_linkextend_navigation_course($navigation, $course, $con
 
     // problem link
     if (has_capability('local/dmoj_user_link:viewproblems', $context)) {
-        $url2 = new moodle_url('/local/dmoj_user_link/problems/apiproblems.php', ['id' => $course->id]);
+        $url2 = new moodle_url('/local/dmoj_user_link/problems/programming_problem.php', ['id' => $course->id]);
         $navigation->add(
             get_string('viewproblems', 'local_dmoj_user_link'),
             $url2,
