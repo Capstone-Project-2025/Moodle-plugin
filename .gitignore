@@ -5,3 +5,6 @@
 !/question/type/
 /question/type/*
 !/question/type/programming/
+!/mod/
+/mod/*
+!/mod/progcontest

@@ -1,0 +1,6 @@
+{
+    "plugintypes": {
+        "progcontest": "mod\/progcontest\/report",
+        "progcontestaccess": "mod\/progcontest\/accessrule"
+    }
+}

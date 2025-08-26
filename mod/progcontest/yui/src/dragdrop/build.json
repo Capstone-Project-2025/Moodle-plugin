@@ -1,0 +1,12 @@
+{
+    "name": "moodle-mod_progcontest-dragdrop",
+    "builds": {
+        "moodle-mod_progcontest-dragdrop": {
+            "jsfiles": [
+                "dragdrop.js",
+                "section.js",
+                "resource.js"
+            ]
+        }
+    }
+}
