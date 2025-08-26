@@ -5,36 +5,17 @@ use context_course;
 function get_all_users() {
     global $DB;
 
-    // Fetch all users except deleted, guest, and admin
     $sql = "SELECT u.id as userid, u.username, u.email, u.firstname, u.lastname
-            FROM {user} u
-            WHERE u.deleted = 0
-            AND u.username <> 'guest'
-            AND NOT EXISTS (
-                SELECT 1
-                FROM STRING_SPLIT((SELECT value FROM {config} WHERE name = 'siteadmins'), ',') s
-                WHERE TRY_CAST(s.value AS INT) = u.id
-            )";
+              FROM {user} u
+             WHERE u.deleted = 0
+               AND u.username <> 'guest'
+               AND u.id NOT IN (" . implode(',', array_keys(get_admins())) . ")";
 
     return $DB->get_records_sql($sql);
 }
 
 function get_all_admins() {
-    global $DB;
-
-    // Fetch all admin
-    // Link admin through the database yourself, you need admin for doing force linking anyway
-    $sql = "SELECT u.id as userid, u.username, u.email, u.firstname, u.lastname
-            FROM {user} u
-            WHERE u.deleted = 0
-            AND u.username <> 'guest'
-            AND EXISTS (
-                SELECT 1
-                FROM STRING_SPLIT((SELECT value FROM {config} WHERE name = 'siteadmins'), ',') s
-                WHERE TRY_CAST(s.value AS INT) = u.id
-            )";
-
-    return $DB->get_records_sql($sql);
+    return get_admins();
 }
 
 // Get all users and their roles in a specific course
