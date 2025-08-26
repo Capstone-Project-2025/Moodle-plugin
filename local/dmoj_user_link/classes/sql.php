@@ -15,14 +15,13 @@ function get_all_users() {
 }
 
 function get_all_admins() {
-    return get_admins();
+    $admins = get_admins();
 
     $result = [];
     foreach ($admins as $admin) {
-        $obj = clone $admin;
-        $obj->userid = $obj->id;
-        unset($obj->id);
-        $result[$obj->userid] = $obj;
+        $admin->userid = $admin->id;
+        unset($admin->id);
+        $result[$admin->userid] = $admin;
     }
 
     return $result;
