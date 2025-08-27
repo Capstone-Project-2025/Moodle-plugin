@@ -2,6 +2,7 @@
 namespace local_dmoj_user_link\api;
 
 defined('MOODLE_INTERNAL') || die();
+require_once(__DIR__ . '/requests_to_dmoj.php');
 
 class OrganizationList extends APIRequest {
 
