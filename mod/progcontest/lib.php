@@ -102,7 +102,7 @@ function progcontest_add_instance($progcontest) {
     // first time created in course event
     $courseid = $progcontest->course;
     $context = \context_module::instance($cmid);
-    if (!$DB->get_records('myplugin_course_org_link', ['course_id' => $courseid])) {
+    if (!$DB->get_record('myplugin_course_org_link', ['course_id' => $courseid])) {
         $event = \mod_progcontest\event\progcontest_first_created::create(array(
             'objectid' => $progcontest->id,
             'context'  => $context,

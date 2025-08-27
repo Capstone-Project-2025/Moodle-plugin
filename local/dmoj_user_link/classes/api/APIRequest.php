@@ -170,10 +170,6 @@ class APIRequest {
 
         $decodedBody = json_decode($body, true);
 
-        $semanticError = null;
-        if (is_array($decodedBody)) {
-            $semanticError = $this->extract_first_error($decodedBody);
-        }
 
         return [
             'status' => $status,
@@ -184,14 +180,4 @@ class APIRequest {
 
 
 
-    protected function extract_first_error(array $body): ?string {
-        foreach ($body as $field => $messages) {
-            if (is_array($messages) && !empty($messages)) {
-                return $messages[0]; // ex: "Trường này không được bỏ trống."
-            } elseif (is_string($messages)) {
-                return $messages;
-            }
-        }
-        return null;
-    }
 }
