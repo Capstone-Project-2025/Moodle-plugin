@@ -54,6 +54,7 @@ class qtype_programming_edit_form extends question_edit_form {
         $mform->setType('new_description', PARAM_RAW);
 
 
+
         $mform->addElement('select', 'new_difficulty', 'Difficulty', [
             'easy' => 'Easy',
             'medium' => 'Medium',

@@ -2506,6 +2506,25 @@ function mod_progcontest_output_fragment_add_random_question_form($args) {
     return $form->render();
 }
 
+function add_progcontest_question($questionid, $progcontest, $page) {
+    global $DB;
+
+    // Exemple de structure (à adapter selon ta table slots).
+    $record = new stdClass();
+    $record->progcontestid = $progcontest->id;
+    $record->questionid = $questionid;
+    $record->page = $page;
+    $record->maxmark = 1.0;
+    $record->slot = $DB->get_field_sql(
+        "SELECT COALESCE(MAX(slot), 0) + 1 FROM {progcontest_slots} WHERE progcontestid = ?",
+        [$progcontest->id]
+    );
+
+    // Insère dans la table qui fait le lien activité <-> questions (comme quiz_slots pour le quiz).
+    return $DB->insert_record('progcontest_slots', $record);
+}
+
+
 
 
 

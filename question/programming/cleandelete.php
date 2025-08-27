@@ -29,6 +29,7 @@ if (!$confirm) {
 require_once($CFG->dirroot . '/question/lib.php');
 
 global $DB;
+$manager = $DB->get_manager();
 
 $questions = $DB->get_records('question', ['qtype' => 'programming']);
 
@@ -57,12 +58,14 @@ if (!empty($questions)) {
     )");
 
     // Step 5: Delete from progcontest_attempts
+    if ($manager->table_exists('progcontest_attempts')) {
     $DB->delete_records_select('progcontest_attempts', "uniqueid IN (
     SELECT qu.id FROM {question_usages} qu
     JOIN {question_attempts} qa ON qa.questionusageid = qu.id
     JOIN {question} q ON q.id = qa.questionid
     WHERE q.qtype = 'programming'
 )", []);
+    }
 
 
     // Step 6: Remove quiz_slots
@@ -72,9 +75,11 @@ if (!empty($questions)) {
     $DB->delete_records_select('question', "id $insql", $params);
 
     // Final cleanup: remove orphaned progcontest attempts
+    if ($manager->table_exists('progcontest_attempts')) {
     $DB->delete_records_select('progcontest_attempts', "uniqueid NOT IN (
     SELECT id FROM {question_usages}
 )");
+    }
 
 // Remove orphaned question_usages
     $DB->delete_records_select('question_usages', "id NOT IN (
@@ -82,8 +87,9 @@ if (!empty($questions)) {
 )");
 
 // Optionally remove previews
+if ($manager->table_exists('progcontest_attempts')) {
     $DB->delete_records('progcontest_attempts', ['preview' => 1]);
-
+}
 
     echo $OUTPUT->notification('✅ All programming questions and related data have been successfully deleted.', 'notifysuccess');
 } else {
