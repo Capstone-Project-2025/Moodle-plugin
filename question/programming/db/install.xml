@@ -120,7 +120,7 @@
     </FIELDS>
     <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="submission_id"/>
-        <KEY NAME="questionfk" TYPE="foreign" FIELDS="question_id" REFTABLE="qtype_programmingramming_options" REFFIELDS="id"/>
+        <KEY NAME="questionfk" TYPE="foreign" FIELDS="question_id" REFTABLE="qtype_programming_options" REFFIELDS="id"/>
         <KEY NAME="languagefk" TYPE="foreign" FIELDS="language_id" REFTABLE="programming_language" REFFIELDS="id"/>
         <KEY NAME="userfk" TYPE="foreign" FIELDS="user_id" REFTABLE="user" REFFIELDS="id"/>
     </KEYS>

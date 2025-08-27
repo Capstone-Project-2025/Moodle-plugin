@@ -18,4 +18,4 @@ $string['new_problem'] = 'Create New Problem';
 $string['problemname'] = 'Select a problem';
 $string['problemcode'] = 'Problem Code';
 $string['description'] = 'Description';
-
+$string['deleteallquestions'] = 'Delete all programming questions';
