@@ -174,8 +174,9 @@ class APIRequest {
         return [
             'status' => $status,
             'body' => $decodedBody,
-            'error' => $semanticError ?: ($error ?: null)
+            'error' => $error ?: null
         ];
+
     }
 
 
