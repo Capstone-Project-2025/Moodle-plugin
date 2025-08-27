@@ -6,8 +6,8 @@
         <TABLE NAME="programming_language" COMMENT="Available programming languages">
             <FIELDS>
                 <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-                <FIELD NAME="name" TYPE="text" NOTNULL="true"/>
-            </FIELDS>
+				<FIELD NAME="name" TYPE="char" LENGTH="100" NOTNULL="true"/>
+			</FIELDS>
             <KEYS>
                 <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
             </KEYS>
@@ -18,16 +18,17 @@
             <FIELDS>
                 <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
                 <FIELD NAME="code" TYPE="char" LENGTH="100" NOTNULL="true"/>
-                <FIELD NAME="name" TYPE="text" NOTNULL="true"/>
-                <FIELD NAME="description" TYPE="text" NOTNULL="false"/>
+				<FIELD NAME="name" TYPE="char" LENGTH="100" NOTNULL="true"/>
+				<FIELD NAME="description" TYPE="text" NOTNULL="false"/>
                 <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
                 <FIELD NAME="ispublic" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
                 <FIELD NAME="points" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
                 <FIELD NAME="difficulty" TYPE="char" LENGTH="10" NOTNULL="false"/>
-                <FIELD NAME="time_limit" TYPE="float" LENGTH="10,2" NOTNULL="true" DEFAULT="1.00" COMMENT="Time limit in seconds"/>
-                <FIELD NAME="memory_limit" TYPE="float" LENGTH="10,2" NOTNULL="true" DEFAULT="64.00" COMMENT="Memory limit in MB"/>
+				<FIELD NAME="time_limit" TYPE="float" NOTNULL="true"  COMMENT="Time limit in seconds"/>
+				<FIELD NAME="memory_limit" TYPE="float" NOTNULL="true"  COMMENT="Memory limit in MB"/>
 
-            </FIELDS>
+
+			</FIELDS>
             <KEYS>
                 <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
                 <KEY NAME="uniq_code" TYPE="unique" FIELDS="code"/>
@@ -54,8 +55,8 @@
         <TABLE NAME="programming_type" COMMENT="List of programming problem types">
             <FIELDS>
                 <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-                <FIELD NAME="name" TYPE="text" NOTNULL="true"/>
-            </FIELDS>
+				<FIELD NAME="name" TYPE="char" LENGTH="100" NOTNULL="true"/>
+			</FIELDS>
             <KEYS>
                 <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
             </KEYS>
@@ -111,9 +112,9 @@
         <FIELD NAME="question_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="user_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="result" TYPE="char" LENGTH="30" NOTNULL="true"/>
-        <FIELD NAME="point" TYPE="float" LENGTH="10" NOTNULL="true"/>
-        <FIELD NAME="total_point" TYPE="float" LENGTH="10" NOTNULL="true"/>
-        <FIELD NAME="language_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
+		<FIELD NAME="point" TYPE="float" NOTNULL="true"/>
+		<FIELD NAME="total_point" TYPE="float" NOTNULL="true"/>
+		<FIELD NAME="language_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="course_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="attempt_id" TYPE="int" LENGTH="10" NOTNULL="true"/>
         <FIELD NAME="code" TYPE="text" NOTNULL="true"/>
