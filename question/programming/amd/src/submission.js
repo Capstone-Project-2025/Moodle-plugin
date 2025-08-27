@@ -156,51 +156,58 @@ define('qtype_programming/submission', ['jquery'], function($) {
                     // ✅ Show previous submissions
                     $('#' + params.showSubmissionsButtonId).on('click', function() {
                         const listDiv = $('#' + params.submissionListContainerId);
-                        listDiv.html('<span style="color:blue;">⏳ Loading submissions...</span>');
+                        const button = $(this);
 
-                        const url = new URL(params.submissionListUrl);
-                        url.searchParams.append('questionid', params.questionId);
-                        url.searchParams.append('sesskey', params.sesskey);
-                        url.searchParams.append('attemptid', params.attemptid);
+                        if (listDiv.is(':empty')) {
+                            listDiv.html('<span style="color:blue;">⏳ Loading submissions...</span>');
 
+                            const url = new URL(params.submissionListUrl);
+                            url.searchParams.append('questionid', params.questionId);
+                            url.searchParams.append('sesskey', params.sesskey);
+                            url.searchParams.append('attemptid', params.attemptid);
 
-                        fetch(url.toString(), {
-                            method: 'GET',
-                            headers: { 'Accept': 'application/json' }
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (!data.submissions || !Array.isArray(data.submissions)) {
-                                listDiv.html('<span style="color:red;">❌ Failed to load submissions</span>');
-                                return;
-                            }
+                            fetch(url.toString(), {
+                                method: 'GET',
+                                headers: { 'Accept': 'application/json' }
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (!data.submissions || !Array.isArray(data.submissions)) {
+                                    listDiv.html('<span style="color:red;">❌ Failed to load submissions</span>');
+                                    return;
+                                }
 
-                            if (data.submissions.length === 0) {
-                                listDiv.html('<span style="color:gray;">No submissions yet.</span>');
-                                return;
-                            }
+                                if (data.submissions.length === 0) {
+                                    listDiv.html('<span style="color:gray;">No submissions yet.</span>');
+                                    return;
+                                }
 
-                            let html = '<h4>Your Submissions</h4><ul style="padding-left:1.2em;">';
-                            data.submissions.forEach(sub => {
-                                const safeSource = $('<div>').text(sub.source_code ?? '').html();
-                                html += `
-                                    <li style="margin-bottom: 1em;">
-                                        <div>
-                                            <strong>Status:</strong> ${sub.status} |
-                                            <strong>Lang:</strong> ${sub.language ?? '-'} |
-                                            <strong>Time:</strong> ${sub.time ?? '-'} |
-                                            <strong>Memory:</strong> ${sub.memory ?? '-'}
-                                            <button type="button" class="toggle-source" data-id="${sub.submission_id}">show code</button>
-                                        </div>
-                                        <pre id="source-${sub.submission_id}" class="submission-source" style="display:none;">${safeSource}</pre>
-                                    </li>`;
+                                let html = '<h4>Your Submissions</h4><ul style="max-height: 200px; overflow-y: auto; padding-left:1.2em;">';
+                                data.submissions.forEach(sub => {
+                                    const safeSource = $('<div>').text(sub.source_code ?? '').html();
+                                    html += `
+                                        <li style="margin-bottom: 1em;">
+                                            <div>
+                                                <strong>Status:</strong> ${sub.status} |
+                                                <strong>Lang:</strong> ${sub.language ?? '-'} |
+                                                <strong>Time:</strong> ${sub.time ?? '-'} |
+                                                <strong>Memory:</strong> ${sub.memory ?? '-'}
+                                                <button type="button" class="toggle-source" data-id="${sub.submission_id}">show code</button>
+                                            </div>
+                                            <pre id="source-${sub.submission_id}" class="submission-source" style="display:none;">${safeSource}</pre>
+                                        </li>`;
+                                });
+                                html += '</ul>';
+                                listDiv.html(html);
+                            })
+                            .catch(err => {
+                                listDiv.html('<span style="color:red;">❌ Error fetching submissions: ' + err.message + '</span>');
                             });
-                            html += '</ul>';
-                            listDiv.html(html);
-                        })
-                        .catch(err => {
-                            listDiv.html('<span style="color:red;">❌ Error fetching submissions: ' + err.message + '</span>');
-                        });
+                            button.text('Hide Submissions');
+                        } else {
+                            listDiv.empty();
+                            button.text('Show Submissions');
+                        }
                     });
 
                     // 🔁 Toggle to show/hide source code
