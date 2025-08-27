@@ -103,10 +103,9 @@ define('qtype_programming/submission', ['jquery'], function($) {
 
                     // ✅ Submit the solution
                     $('#' + params.submitButtonId).on('click', function() {
-                        if (editor && typeof editor.save === 'function') {
-                            editor.save(); // met à jour le DOM
-                        }
-                        const code = inputEl.value; // contient le texte après .save()
+                        const code = (editor && typeof editor.getValue === 'function')
+                            ? editor.getValue()
+                            : inputEl?.value || '';
 
 
                         const languageId = parseInt($('#' + params.selectId).val(), 10);
