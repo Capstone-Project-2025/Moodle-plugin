@@ -2,7 +2,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'qtype_programming';
-$plugin->version = 20250702010;
+$plugin->version = 20250702011;
 $plugin->requires = 2021051700;
 $plugin->maturity = MATURITY_ALPHA;
 $plugin->settings = true;
